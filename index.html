@@ -32,15 +32,23 @@
       width: 25px;
       height: 25px;
       margin-right: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .vehicle-drop img {
-      position: absolute;
-      top: 0; left: 0;
+    .vehicle-drop img:first-child {
+      position: relative;
       width: 25px;
       height: 25px;
+      top: 0;
+      left: 0;
     }
     .vehicle-drop img:nth-child(2) {
-      left: -3px; /* чуть смещаем иконку icon/bus.svg влево */
+      position: relative;
+      left: -2px;
+      top: -1px;
+      width: 25px;
+      height: 25px;
     }
     .vehicle-marker__text {
       display: flex;
@@ -52,6 +60,7 @@
       align-items: center;
       height: 25px;
       line-height: 25px;
+      user-select: none;
     }
   </style>
 </head>
@@ -161,10 +170,8 @@
     });
   }
 
-  // Обновляем данные без интервала, вызываем сразу и по событию
+  // Обновляем данные сразу и подписываемся на обновления
   updateData();
-
-  // Если хочешь — можешь добавить событие обновления с Firebase (on value)
   database.ref('buses').on('value', updateData);
 
   window.addEventListener('beforeunload', () => {
