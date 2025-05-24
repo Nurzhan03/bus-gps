@@ -62,6 +62,7 @@
 
 <input type="text" id="busNumber" placeholder="Номер автобуса" />
 <button onclick="startTracking(document.getElementById('busNumber').value)">Начать смену</button>
+<button onclick="clearDatabase()">Очистить базу</button>
 
 <div id="map"></div>
 
@@ -162,10 +163,26 @@
     });
   }
 
-  // Обновляем данные без интервала, вызываем сразу и по событию
-  updateData();
+  // Функция очистки базы данных
+  function clearDatabase() {
+    if (confirm("Вы уверены, что хотите очистить всю базу данных автобусов?")) {
+      database.ref('buses').remove()
+        .then(() => {
+          alert("База данных очищена.");
+          // Удаляем все маркеры с карты
+          for (let key in busMarkers) {
+            map.removeLayer(busMarkers[key]);
+          }
+          busMarkers = {};
+        })
+        .catch((error) => {
+          alert("Ошибка при очистке базы: " + error.message);
+        });
+    }
+  }
 
-  // Если хочешь — можешь добавить событие обновления с Firebase (on value)
+  // Обновляем данные сразу и по изменению в Firebase
+  updateData();
   database.ref('buses').on('value', updateData);
 
   window.addEventListener('beforeunload', () => {
