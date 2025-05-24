@@ -28,25 +28,25 @@
       margin-top: 20px;
     }
 
-    /* Кастомные стили из oskemenbus с поправкой */
+    /* Кастомные стили */
     .vehicle-marker {
       text-align: center;
       position: relative;
       display: flex !important;
-      width: 90px; /* немного уже */
+      width: 90px;
       height: 25px;
       font-weight: bold;
       font-size: 16px;
       color: black;
       user-select: none;
       align-items: center;
-      gap: 5px; /* расстояние между иконкой и номером меньше */
+      gap: 0px; /* убрал расстояние между иконкой и номером */
     }
     .vehicle-drop {
       position: relative;
       width: 25px;
       height: 25px;
-      margin-right: 0; /* убрали отступ */
+      margin-right: 0;
       flex-shrink: 0;
     }
     .vehicle-drop img {
@@ -56,13 +56,16 @@
       width: 25px;
       height: 25px;
     }
+    /* Смещаем иконку bus.svg немного влево */
+    .vehicle-drop img:last-child {
+      left: -4px; /* сдвиг влево на 4px */
+    }
     .vehicle-label {
       display: flex;
       align-items: center;
-      margin-left: 0; /* убрали отступ */
+      margin-left: 0;
       font-weight: bold;
     }
-    /* Убираем иконки дополнительных изображений */
     .vehicle-additional-image {
       display: none !important;
     }
@@ -161,7 +164,6 @@
     }
   }
 
-  // Живое обновление с Firebase
   database.ref('buses').on('value', function(snapshot) {
     for (let key in busMarkers) {
       map.removeLayer(busMarkers[key]);
