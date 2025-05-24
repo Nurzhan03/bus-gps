@@ -28,24 +28,26 @@
       margin-top: 20px;
     }
 
-    /* Кастомные стили из oskemenbus */
+    /* Кастомные стили из oskemenbus с поправкой */
     .vehicle-marker {
       text-align: center;
       position: relative;
       display: flex !important;
-      width: 110px;
+      width: 90px; /* немного уже */
       height: 25px;
       font-weight: bold;
       font-size: 16px;
       color: black;
       user-select: none;
       align-items: center;
+      gap: 5px; /* расстояние между иконкой и номером меньше */
     }
     .vehicle-drop {
       position: relative;
       width: 25px;
       height: 25px;
-      margin-right: 5px;
+      margin-right: 0; /* убрали отступ */
+      flex-shrink: 0;
     }
     .vehicle-drop img {
       position: absolute;
@@ -57,17 +59,12 @@
     .vehicle-label {
       display: flex;
       align-items: center;
+      margin-left: 0; /* убрали отступ */
+      font-weight: bold;
     }
-    .vehicle-label span {
-      margin-right: 5px;
-    }
+    /* Убираем иконки дополнительных изображений */
     .vehicle-additional-image {
-      width: 20px;
-      height: 20px;
-      margin-right: 3px;
-    }
-    .hidden {
-      display: none;
+      display: none !important;
     }
 
     /* Leaflet overrides */
@@ -77,17 +74,6 @@
       -moz-user-select: none;
       user-select: none;
       -webkit-user-drag: none;
-    }
-    .leaflet-image-layer, .leaflet-layer, .leaflet-marker-icon, .leaflet-marker-shadow, .leaflet-pane, .leaflet-pane>canvas, .leaflet-pane>svg, .leaflet-tile, .leaflet-tile-container, .leaflet-zoom-box {
-      position: absolute;
-      left: 0;
-      top: 0;
-    }
-    .leaflet-interactive {
-      cursor: pointer;
-    }
-    .leaflet-zoom-animated {
-      transform-origin: 0 0;
     }
   </style>
 </head>
@@ -133,16 +119,14 @@
         </div>
         <div class="vehicle-label">
           <span>${busNumber}</span>
-          <img src="https://oskemenbus.kz/assets/images/map-icons/equipment-icons/accessible.svg" class="vehicle-additional-image">
-          <img src="https://oskemenbus.kz/assets/images/map-icons/payment-icons/t-pay.svg" class="vehicle-additional-image hidden">
         </div>
       </div>
     `;
     return L.divIcon({
       html: html,
       className: '',
-      iconSize: [110, 25],
-      iconAnchor: [55, 12],
+      iconSize: [90, 25],
+      iconAnchor: [45, 12],
       popupAnchor: [0, -25]
     });
   }
