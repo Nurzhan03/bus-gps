@@ -16,6 +16,7 @@
     #map { width: 100%; height: 500px; margin-top: 20px; }
     body { font-family: Arial, sans-serif; padding: 20px; }
     input, button { padding: 8px; font-size: 16px; margin-right: 10px; }
+    #busList { margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -26,6 +27,9 @@
 <button onclick="startTracking(document.getElementById('busNumber').value)">Начать смену</button>
 
 <div id="map"></div>
+
+<h3>Список автобусов:</h3>
+<ul id="busList"></ul>
 
 <script>
   // Инициализация Firebase
@@ -82,25 +86,38 @@
     }
   }
 
-  // Обновление маркеров
-  function updateMarkers() {
+  // Обновление маркеров и списка
+  function updateMarkersAndList() {
     database.ref('buses').once('value', function(snapshot) {
+      // Удаляем старые маркеры
       for (let key in busMarkers) {
         map.removeLayer(busMarkers[key]);
       }
       busMarkers = {};
 
+      // Очищаем список
+      const busList = document.getElementById('busList');
+      busList.innerHTML = '';
+
+      // Проходим по каждому автобусу
       snapshot.forEach(function(childSnapshot) {
         let bus = childSnapshot.val();
+
+        // Добавляем маркер на карту
         let marker = L.marker([bus.latitude, bus.longitude], { icon: busIcon })
           .addTo(map)
-          .bindPopup("Автобус № " + childSnapshot.key + "<br>Время: " + bus.timestamp);
+          .bindPopup("Автобус № " + childSnapshot.key + "<br>Время: " + new Date(bus.timestamp).toLocaleTimeString());
         busMarkers[childSnapshot.key] = marker;
+
+        // Добавляем автобус в список
+        let li = document.createElement('li');
+        li.textContent = `Автобус №${childSnapshot.key} — ${bus.latitude.toFixed(5)}, ${bus.longitude.toFixed(5)} — обновлён: ${new Date(bus.timestamp).toLocaleTimeString()}`;
+        busList.appendChild(li);
       });
     });
   }
 
-  setInterval(updateMarkers, 5000);
+  setInterval(updateMarkersAndList, 5000);
 </script>
 
 </body>
