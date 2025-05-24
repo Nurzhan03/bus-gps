@@ -31,21 +31,17 @@
       position: relative;
       width: 25px;
       height: 25px;
-      margin-right: 6px;
+      margin-right: 3px;
     }
-    .vehicle-drop img:first-child {
+    .vehicle-drop img {
       position: absolute;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       width: 25px;
       height: 25px;
     }
     .vehicle-drop img:nth-child(2) {
-      position: absolute;
+      left: -2px; /* чуть смещаем иконку icon/bus.svg влево */
       top: -1px;
-      left: -2px;
-      width: 25px;
-      height: 25px;
     }
     .vehicle-marker__text {
       display: flex;
@@ -57,8 +53,6 @@
       align-items: center;
       height: 25px;
       line-height: 25px;
-      user-select: none;
-      white-space: nowrap;
     }
   </style>
 </head>
@@ -95,7 +89,7 @@
 
   let busMarkers = {};
 
-  // Создание кастомного маркера
+  // Функция для создания кастомного маркера с иконками и номером
   function createBusMarker(busNumber) {
     const html = `
       <div class="vehicle-marker">
@@ -103,7 +97,9 @@
           <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/background/bus.svg" alt="background">
           <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" alt="icon">
         </div>
-        <div class="vehicle-marker__text">${busNumber}</div>
+        <div class="vehicle-marker__text">
+          <span>${busNumber}</span>
+        </div>
       </div>
     `;
     return L.divIcon({
@@ -115,6 +111,7 @@
     });
   }
 
+  // GPS-трекинг
   let watchId = null;
 
   function startTracking(busNumber) {
@@ -123,7 +120,7 @@
       return;
     }
     if (navigator.geolocation) {
-      watchId = navigator.geolocation.watchPosition(position => {
+      watchId = navigator.geolocation.watchPosition(function(position) {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
         database.ref('buses/' + busNumber).set({
@@ -131,7 +128,7 @@
           longitude: lon,
           timestamp: new Date().toISOString()
         });
-      }, error => {
+      }, function(error) {
         alert("Ошибка получения координат: " + error.message);
       });
     } else {
@@ -146,15 +143,16 @@
     }
   }
 
-  // Обновление маркеров
+  // Обновление маркеров на карте и списка автобусов
   function updateData() {
-    database.ref('buses').once('value', snapshot => {
+    database.ref('buses').once('value', function(snapshot) {
+      // Удаляем старые маркеры
       for (let key in busMarkers) {
         map.removeLayer(busMarkers[key]);
       }
       busMarkers = {};
 
-      snapshot.forEach(childSnapshot => {
+      snapshot.forEach(function(childSnapshot) {
         let bus = childSnapshot.val();
         let marker = L.marker([bus.latitude, bus.longitude], { icon: createBusMarker(childSnapshot.key) })
           .addTo(map)
@@ -164,10 +162,15 @@
     });
   }
 
+  // Обновляем данные без интервала, вызываем сразу и по событию
   updateData();
+
+  // Если хочешь — можешь добавить событие обновления с Firebase (on value)
   database.ref('buses').on('value', updateData);
 
-  window.addEventListener('beforeunload', stopTracking);
+  window.addEventListener('beforeunload', () => {
+    stopTracking();
+  });
 </script>
 
 </body>
