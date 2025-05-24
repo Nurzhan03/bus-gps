@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
   <meta charset="utf-8" />
   <title>Bus Tracker (OpenStreetMap)</title>
@@ -9,197 +9,168 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
   <!-- Leaflet -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    input,
-    button {
-      padding: 8px;
-      font-size: 16px;
-      margin-right: 10px;
-    }
-    #map {
-      width: 100%;
-      height: 500px;
-      margin-top: 20px;
-    }
+    #map { width: 100%; height: 500px; margin-top: 20px; }
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, button { padding: 8px; font-size: 16px; margin-right: 10px; }
 
-    /* Кастомные стили */
+    /* Стили для кастомного маркера */
     .vehicle-marker {
-      text-align: center;
       position: relative;
-      display: flex !important;
       width: 90px;
       height: 25px;
-      font-weight: bold;
-      font-size: 16px;
-      color: black;
-      user-select: none;
+      display: flex;
       align-items: center;
       gap: 0px;
+      user-select: none;
     }
     .vehicle-drop {
       position: relative;
       width: 25px;
       height: 25px;
-      margin-right: 0;
-      flex-shrink: 0;
+      margin-right: 3px;
     }
     .vehicle-drop img {
       position: absolute;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       width: 25px;
       height: 25px;
     }
-    /* Смещаем иконку bus.svg немного влево */
-    .vehicle-drop img:last-child {
-      left: -2px;
-      top: -1px;
+    .vehicle-drop img:nth-child(2) {
+      left: -3px; /* чуть смещаем иконку icon/bus.svg влево */
     }
-    .vehicle-label {
+    .vehicle-marker__text {
       display: flex;
-      align-items: center;
-      margin-left: 0;
+      background: #fff;
+      padding: 0 6px;
       font-weight: bold;
-    }
-    .vehicle-additional-image {
-      display: none !important;
-    }
-
-    /* Leaflet overrides */
-    .leaflet-marker-icon,
-    .leaflet-marker-shadow {
-      display: block;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      user-select: none;
-      -webkit-user-drag: none;
+      font-size: 16px;
+      color: black;
+      align-items: center;
+      height: 25px;
+      line-height: 25px;
     }
   </style>
 </head>
 <body>
-  <h2>GPS Трекинг автобусов (OpenStreetMap)</h2>
 
-  <input type="text" id="busNumber" placeholder="Номер автобуса" />
-  <button onclick="startTracking(document.getElementById('busNumber').value)">
-    Начать смену
-  </button>
+<h2>GPS Трекинг автобусов (OpenStreetMap)</h2>
 
-  <div id="map"></div>
+<input type="text" id="busNumber" placeholder="Номер автобуса" />
+<button onclick="startTracking(document.getElementById('busNumber').value)">Начать смену</button>
 
-  <script>
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyBc-x0sFbt16lzmMx77dLwysXGJUOsXKsY",
-      authDomain: "bustrackerweb.firebaseapp.com",
-      projectId: "bustrackerweb",
-      storageBucket: "bustrackerweb.appspot.com",
-      messagingSenderId: "325393024111",
-      appId: "1:325393024111:web:d78728eb97180a03aeb99a",
-      measurementId: "G-TRVJFYPJXZ",
-      databaseURL:
-        "https://bustrackerweb-default-rtdb.europe-west1.firebasedatabase.app",
-    };
+<div id="map"></div>
 
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+<script>
+  // Инициализация Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyBc-x0sFbt16lzmMx77dLwysXGJUOsXKsY",
+    authDomain: "bustrackerweb.firebaseapp.com",
+    projectId: "bustrackerweb",
+    storageBucket: "bustrackerweb.appspot.com",
+    messagingSenderId: "325393024111",
+    appId: "1:325393024111:web:d78728eb97180a03aeb99a",
+    measurementId: "G-TRVJFYPJXZ",
+    databaseURL: "https://bustrackerweb-default-rtdb.europe-west1.firebasedatabase.app"
+  };
 
-    // Инициализация карты
-    let map = L.map("map").setView([49.9567, 82.6075], 13);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors",
-    }).addTo(map);
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
 
-    let busMarkers = {};
+  // Карта
+  let map = L.map('map').setView([49.9567, 82.6075], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
 
-    // Создаём кастомный маркер для автобуса
-    function createBusMarker(busNumber) {
-      const html = `
-        <div class="vehicle-marker">
-          <div class="vehicle-drop">
-            <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/background/bus.svg" alt="bg">
-            <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" alt="icon">
-          </div>
-          <div class="vehicle-label">
-            <span>${busNumber}</span>
-          </div>
+  let busMarkers = {};
+
+  // Функция для создания кастомного маркера с иконками и номером
+  function createBusMarker(busNumber) {
+    const html = `
+      <div class="vehicle-marker">
+        <div class="vehicle-drop">
+          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/background/bus.svg" alt="background">
+          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" alt="icon">
         </div>
-      `;
-      return L.divIcon({
-        html: html,
-        className: "",
-        iconSize: [90, 25],
-        iconAnchor: [45, 12],
-        popupAnchor: [0, -25],
+        <div class="vehicle-marker__text">
+          <span>${busNumber}</span>
+        </div>
+      </div>
+    `;
+    return L.divIcon({
+      html: html,
+      className: "",
+      iconSize: [90, 25],
+      iconAnchor: [45, 12],
+      popupAnchor: [0, -25]
+    });
+  }
+
+  // GPS-трекинг
+  let watchId = null;
+
+  function startTracking(busNumber) {
+    if (!busNumber) {
+      alert("Введите номер автобуса");
+      return;
+    }
+    if (navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(function(position) {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        database.ref('buses/' + busNumber).set({
+          latitude: lat,
+          longitude: lon,
+          timestamp: new Date().toISOString()
+        });
+      }, function(error) {
+        alert("Ошибка получения координат: " + error.message);
       });
+    } else {
+      alert("Геолокация не поддерживается этим устройством");
     }
+  }
 
-    // Функция запуска отслеживания GPS и отправки координат в Firebase
-    function startTracking(busNumber) {
-      if (!busNumber) {
-        alert("Введите номер автобуса");
-        return;
-      }
-      if (navigator.geolocation) {
-        watchId = navigator.geolocation.watchPosition(
-          function (position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            database.ref("buses/" + busNumber).set({
-              latitude: lat,
-              longitude: lon,
-              timestamp: new Date().toISOString(),
-            });
-          },
-          function (error) {
-            alert("Ошибка получения координат: " + error.message);
-          }
-        );
-      } else {
-        alert("Геолокация не поддерживается этим устройством");
-      }
+  function stopTracking() {
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
     }
+  }
 
-    let watchId = null;
-    function stopTracking() {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
-      }
-    }
-
-    // Слушаем изменения в базе данных Firebase и обновляем маркеры
-    database.ref("buses").on("value", function (snapshot) {
+  // Обновление маркеров на карте и списка автобусов
+  function updateData() {
+    database.ref('buses').once('value', function(snapshot) {
+      // Удаляем старые маркеры
       for (let key in busMarkers) {
         map.removeLayer(busMarkers[key]);
       }
       busMarkers = {};
 
-      snapshot.forEach(function (childSnapshot) {
+      snapshot.forEach(function(childSnapshot) {
         let bus = childSnapshot.val();
-        let marker = L.marker([bus.latitude, bus.longitude], {
-          icon: createBusMarker(childSnapshot.key),
-        })
+        let marker = L.marker([bus.latitude, bus.longitude], { icon: createBusMarker(childSnapshot.key) })
           .addTo(map)
-          .bindPopup(
-            "Автобус № " + childSnapshot.key + "<br>Время: " + bus.timestamp
-          );
+          .bindPopup("Автобус № " + childSnapshot.key + "<br>Время: " + bus.timestamp);
         busMarkers[childSnapshot.key] = marker;
       });
     });
+  }
 
-    window.addEventListener("beforeunload", () => {
-      stopTracking();
-    });
-  </script>
+  // Обновляем данные без интервала, вызываем сразу и по событию
+  updateData();
+
+  // Если хочешь — можешь добавить событие обновления с Firebase (on value)
+  database.ref('buses').on('value', updateData);
+
+  window.addEventListener('beforeunload', () => {
+    stopTracking();
+  });
+</script>
+
 </body>
 </html>
