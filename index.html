@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <title>Bus Tracker (OpenStreetMap)</title>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <meta charset="UTF-8" />
+  <title>Bus Tracker</title>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     #map { width: 100%; height: 500px; margin-top: 20px; }
-    input, button { padding: 8px; font-size: 16px; margin-right: 10px; }
+    input, button { padding: 8px; font-size: 16px; margin: 5px; }
 
     .vehicle-marker {
       position: relative;
@@ -54,33 +54,28 @@
       line-height: 25px;
     }
 
-    #loginPanel, #controlPanel {
-      margin-bottom: 10px;
-    }
+    #auth, #control-panel { margin-bottom: 10px; }
   </style>
 </head>
 <body>
 
-<h2>GPS Трекинг автобусов (OpenStreetMap)</h2>
+<h2>GPS Трекинг автобусов</h2>
 
-<!-- Экран входа по PIN -->
-<div id="loginPanel">
-  <input type="password" id="pinInput" placeholder="Введите PIN-код" />
-  <button id="loginBtn">Войти</button>
+<div id="auth">
+  <input type="text" id="pinInput" placeholder="Введите PIN">
+  <button onclick="login()">Войти</button>
 </div>
 
-<!-- Панель управления для водителя -->
-<div id="controlPanel" style="display:none;">
-  <input type="text" id="busNumber" placeholder="Номер маршрута" />
-  <button id="changeRouteBtn">Поменять маршрут</button>
-  <button id="shiftButton">Начать смену</button>
-  <button id="logoutBtn" style="margin-left:10px;">Выйти</button>
+<div id="control-panel" style="display:none;">
+  <input type="text" id="busNumberInput" placeholder="Номер маршрута">
+  <button id="shiftButton" onclick="toggleShift()">Начать смену</button>
+  <button onclick="changeRoute()">Поменять маршрут</button>
 </div>
 
 <div id="map"></div>
 
 <script>
-  // Firebase init
+  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyBc-x0sFbt16lzmMx77dLwysXGJUOsXKsY",
     authDomain: "bustrackerweb.firebaseapp.com",
@@ -91,38 +86,33 @@
     measurementId: "G-TRVJFYPJXZ",
     databaseURL: "https://bustrackerweb-default-rtdb.europe-west1.firebasedatabase.app"
   };
-
   firebase.initializeApp(firebaseConfig);
   const database = firebase.database();
 
-  let currentDriver = null;
-  let watchId = null;
   let map = null;
   let busMarkers = {};
+  let watchId = null;
+  let currentDriver = null;
 
-  const loginPanel = document.getElementById("loginPanel");
-  const controlPanel = document.getElementById("controlPanel");
-  const mapDiv = document.getElementById("map");
-  const pinInput = document.getElementById("pinInput");
-  const loginBtn = document.getElementById("loginBtn");
-  const logoutBtn = document.getElementById("logoutBtn");
-  const busNumberInput = document.getElementById("busNumber");
-  const shiftButton = document.getElementById("shiftButton");
-  const changeRouteBtn = document.getElementById("changeRouteBtn");
+  // Инициализируем карту сразу
+  window.addEventListener("DOMContentLoaded", () => {
+    map = L.map('map').setView([49.9567, 82.6075], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
 
-  // Создание маркера с номером маршрута
-  function createBusMarker(busNumber) {
+    database.ref("drivers").on("value", updateMap);
+  });
+
+  function createBusMarker(routeNumber) {
     const html = `
       <div class="vehicle-marker">
         <div class="vehicle-drop">
-          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/background/bus.svg" alt="background">
-          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" alt="icon">
+          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/background/bus.svg">
+          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg">
         </div>
-        <div class="vehicle-marker__text">
-          <span>${busNumber || ''}</span>
-        </div>
-      </div>
-    `;
+        <div class="vehicle-marker__text"><span>${routeNumber ?? ""}</span></div>
+      </div>`;
     return L.divIcon({
       html: html,
       className: "",
@@ -132,36 +122,55 @@
     });
   }
 
-  // Обновление карты и маркеров из Firebase
-  function updateMap() {
-    database.ref("drivers").once("value", snapshot => {
-      // Удаляем старые маркеры
-      for (let key in busMarkers) {
-        map.removeLayer(busMarkers[key]);
-      }
-      busMarkers = {};
+  function updateMap(snapshot) {
+    for (let key in busMarkers) {
+      map.removeLayer(busMarkers[key]);
+    }
+    busMarkers = {};
 
-      snapshot.forEach(childSnapshot => {
-        const driver = childSnapshot.val();
-        if (driver.latitude && driver.longitude) {
-          const marker = L.marker([driver.latitude, driver.longitude], {
-            icon: createBusMarker(driver.route)
-          }).addTo(map).bindPopup(
-            `Маршрут: ${driver.route || "не указан"}<br>Время: ${driver.timestamp || "—"}`
-          );
-          busMarkers[childSnapshot.key] = marker;
-        }
-      });
+    snapshot.forEach(child => {
+      const data = child.val();
+      if (data.latitude && data.longitude) {
+        const marker = L.marker([data.latitude, data.longitude], {
+          icon: createBusMarker(data.route)
+        }).addTo(map);
+        marker.bindPopup("Водитель: " + key + "<br>Маршрут: " + (data.route ?? "—"));
+        busMarkers[key] = marker;
+      }
     });
   }
 
-  // Начать отслеживание геопозиции и обновлять данные в Firebase
+  function login() {
+    const pin = document.getElementById("pinInput").value;
+    if (!pin) return alert("Введите PIN");
+
+    database.ref("drivers").once("value", snapshot => {
+      let found = false;
+      snapshot.forEach(child => {
+        if (child.val().pin === pin) {
+          found = true;
+          currentDriver = child.key;
+          document.getElementById("auth").style.display = "none";
+          document.getElementById("control-panel").style.display = "block";
+
+          const route = child.val().route;
+          document.getElementById("busNumberInput").value = route ?? "";
+        }
+      });
+      if (!found) {
+        alert("PIN не найден");
+      }
+    });
+  }
+
   function startTracking(driverId) {
+    if (!driverId) return;
+
     if (navigator.geolocation) {
       watchId = navigator.geolocation.watchPosition(pos => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
-        const route = busNumberInput.value.trim() || null;
+        const route = document.getElementById("busNumberInput").value.trim() || null;
 
         database.ref("drivers/" + driverId).update({
           latitude: lat,
@@ -177,106 +186,32 @@
     }
   }
 
-  // Остановить отслеживание
   function stopTracking() {
     if (watchId !== null) {
       navigator.geolocation.clearWatch(watchId);
       watchId = null;
     }
-    if (currentDriver) {
-      database.ref("drivers/" + currentDriver).update({
-        latitude: null,
-        longitude: null,
-        timestamp: null
-      });
-      currentDriver = null;
-    }
-    busNumberInput.value = "";
   }
 
-  // Переключение состояния смены
   function toggleShift() {
+    const btn = document.getElementById("shiftButton");
     if (watchId) {
       stopTracking();
-      shiftButton.textContent = "Начать смену";
+      btn.textContent = "Начать смену";
     } else {
       startTracking(currentDriver);
-      shiftButton.textContent = "Завершить смену";
+      btn.textContent = "Завершить смену";
     }
   }
 
-  // Обновление маршрута в базе (кнопка "Поменять маршрут")
-  changeRouteBtn.addEventListener("click", () => {
-    if (!currentDriver) {
-      alert("Войдите в аккаунт");
-      return;
+  function changeRoute() {
+    const newRoute = document.getElementById("busNumberInput").value.trim();
+    if (currentDriver) {
+      database.ref("drivers/" + currentDriver).update({ route: newRoute || null });
     }
-    const newRoute = busNumberInput.value.trim() || null;
-    database.ref("drivers/" + currentDriver).update({ route: newRoute });
-    alert("Маршрут обновлен");
-    updateMap();
-  });
+  }
 
-  // Обработчик логина по PIN
-  loginBtn.addEventListener("click", () => {
-    const pin = pinInput.value.trim();
-    if (!pin) {
-      alert("Введите PIN-код");
-      return;
-    }
-
-    database.ref("drivers").orderByChild("pin").equalTo(pin).once("value", snapshot => {
-      if (snapshot.exists()) {
-        snapshot.forEach(childSnapshot => {
-          currentDriver = childSnapshot.key;
-          const driverData = childSnapshot.val();
-
-          // Скрыть экран входа, показать управление
-          loginPanel.style.display = "none";
-          controlPanel.style.display = "block";
-
-          busNumberInput.value = driverData.route || "";
-
-          // Инициализация карты, если еще не инициализирована
-          if (!map) {
-            map = L.map('map').setView([49.9567, 82.6075], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              attribution: '&copy; OpenStreetMap'
-            }).addTo(map);
-
-            // Обновление карты при изменениях в базе
-            database.ref("drivers").on("value", updateMap);
-          }
-
-          updateMap();
-
-          shiftButton.textContent = "Начать смену";
-          pinInput.value = "";
-        });
-      } else {
-        alert("Неверный PIN-код");
-      }
-    });
-  });
-
-  // Кнопка выхода — сбрасываем всё и возвращаемся к экрану входа
-  logoutBtn.addEventListener("click", () => {
-    stopTracking();
-    currentDriver = null;
-    loginPanel.style.display = "block";
-    controlPanel.style.display = "none";
-    busNumberInput.value = "";
-  });
-
-  shiftButton.addEventListener("click", toggleShift);
-
-  // Перед уходом со страницы остановить трекинг
-  window.addEventListener("beforeunload", () => {
-    stopTracking();
-  });
-
-  // Карта отображается всегда
-  // Панель управления — только после входа
+  window.addEventListener("beforeunload", () => stopTracking());
 </script>
 
 </body>
