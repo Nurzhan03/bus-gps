@@ -1,91 +1,77 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <title>Bus Tracker (OpenStreetMap)</title>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-
-  <!-- Leaflet -->
+  <meta charset="UTF-8">
+  <title>Вход водителя</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
+    html, body {
+      height: 100%;
+      margin: 0;
     }
     #map {
+      height: 100%;
       width: 100%;
-      height: 500px;
-      margin-top: 20px;
     }
-    input, button {
-      padding: 8px;
-      font-size: 16px;
-      margin-right: 10px;
-      margin-bottom: 10px;
-    }
-    .vehicle-marker {
-      position: relative;
-      width: 90px;
-      height: 25px;
-      display: flex;
-      align-items: center;
-      gap: 0px;
-      user-select: none;
-    }
-    .vehicle-drop {
-      position: relative;
-      width: 25px;
-      height: 25px;
-      margin-right: 3px;
-    }
-    .vehicle-drop img {
+    #loginPanel, #driverPanel {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 25px;
-      height: 25px;
-    }
-    .vehicle-drop img:nth-child(2) {
-      left: -2px;
-      top: -1px;
-    }
-    .vehicle-marker__text {
-      display: flex;
-      background: #fff;
-      padding: 0 6px;
-      font-weight: bold;
-      font-size: 16px;
-      color: black;
-      align-items: center;
-      height: 25px;
-      line-height: 25px;
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 10px;
+      z-index: 999;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      border-radius: 8px;
     }
     #driverPanel {
       display: none;
+    }
+    .vehicle-marker {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .vehicle-drop {
+      position: relative;
+    }
+    .vehicle-drop img:first-child {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .vehicle-drop img:last-child {
+      position: relative;
+    }
+    .vehicle-marker__text span {
+      font-weight: bold;
+      background: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 5px;
     }
   </style>
 </head>
 <body>
 
-<h2>GPS Трекинг автобусов (OpenStreetMap)</h2>
+<div id="map"></div>
 
 <div id="loginPanel">
-  <input type="password" id="pinInput" placeholder="Введите PIN" />
+  <input type="text" id="pinInput" placeholder="Введите PIN">
   <button onclick="login()">Войти</button>
 </div>
 
 <div id="driverPanel">
-  <input type="text" id="routeInput" placeholder="Номер маршрута" />
-  <button id="startStopBtn" onclick="toggleTracking()">Начать смену</button>
-  <button onclick="changeRoute()">Поменять маршрут</button>
+  <div>
+    <input type="text" id="routeInput" placeholder="Номер маршрута">
+    <button onclick="changeRoute()">Поменять маршрут</button>
+  </div>
+  <div style="margin-top:10px;">
+    <button id="startStopBtn" onclick="toggleTracking()">Начать смену</button>
+  </div>
 </div>
-
-<div id="map"></div>
 
 <script>
   const firebaseConfig = {
@@ -106,7 +92,6 @@
   let watchId = null;
   const busMarkers = {};
 
-  // карта
   const map = L.map('map').setView([49.9567, 82.6075], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap'
@@ -138,11 +123,19 @@
       if (snap.exists()) {
         const driverId = Object.keys(snap.val())[0];
         currentDriver = driverId;
+        const driverData = snap.val()[driverId];
+
         document.getElementById("loginPanel").style.display = "none";
         document.getElementById("driverPanel").style.display = "block";
 
-        const route = snap.val()[driverId].route;
-        document.getElementById("routeInput").value = route ?? "";
+        document.getElementById("routeInput").value = driverData.route ?? "";
+
+        if (driverData.latitude && driverData.longitude) {
+          document.getElementById("startStopBtn").innerText = "Завершить смену";
+        } else {
+          document.getElementById("startStopBtn").innerText = "Начать смену";
+        }
+
       } else {
         alert("Неверный PIN");
       }
@@ -151,7 +144,8 @@
 
   function toggleTracking() {
     const btn = document.getElementById("startStopBtn");
-    if (watchId === null) {
+
+    if (btn.innerText === "Начать смену") {
       if (!navigator.geolocation) return alert("Геолокация не поддерживается");
       watchId = navigator.geolocation.watchPosition(pos => {
         const { latitude, longitude } = pos.coords;
@@ -167,9 +161,21 @@
       });
       btn.innerText = "Завершить смену";
     } else {
-      navigator.geolocation.clearWatch(watchId);
-      watchId = null;
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      db.ref("drivers/" + currentDriver).update({
+        latitude: null,
+        longitude: null,
+        timestamp: null
+      });
       btn.innerText = "Начать смену";
+
+      if (busMarkers[currentDriver]) {
+        map.removeLayer(busMarkers[currentDriver]);
+        delete busMarkers[currentDriver];
+      }
     }
   }
 
@@ -183,15 +189,17 @@
       for (let id in busMarkers) {
         map.removeLayer(busMarkers[id]);
       }
+      Object.keys(busMarkers).forEach(key => delete busMarkers[key]);
+
       snap.forEach(child => {
-        const key = child.key;
+        const id = child.key;
         const data = child.val();
         if (data.latitude && data.longitude) {
           const marker = L.marker([data.latitude, data.longitude], {
             icon: createBusMarker(data.route)
           }).addTo(map);
-          marker.bindPopup("Водитель: " + key + "<br>Маршрут: " + (data.route ?? "—"));
-          busMarkers[key] = marker;
+          marker.bindPopup("Водитель: " + id + "<br>Маршрут: " + (data.route ?? "—"));
+          busMarkers[id] = marker;
         }
       });
     });
