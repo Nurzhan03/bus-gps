@@ -143,6 +143,12 @@
         document.getElementById("driverPanel").style.display = "block";
 
         document.getElementById("routeInput").value = driverData.route ?? "";
+        const changeBtn = document.querySelector('button[onclick="changeRoute()"]');
+        if (driverData.route) {
+          changeBtn.style.display = "inline-block";
+        } else {
+          changeBtn.style.display = "none";
+        }
 
         // если координаты есть, значит смена активна
         if (driverData.latitude && driverData.longitude) {
@@ -185,6 +191,9 @@
           timestamp: new Date().toISOString(),
           route
         });
+        if (route) {
+          document.querySelector('button[onclick="changeRoute()"]').style.display = "inline-block";
+        }
       }, err => {
         alert("Ошибка геолокации: " + err.message);
       });
