@@ -104,6 +104,7 @@
 
   let currentDriver = null;
   let watchId = null;
+  let prevPosition = null;
   const busMarkers = {};
 
   const map = L.map('map').setView([49.9567, 82.6075], 13);
@@ -111,11 +112,19 @@
     attribution: '&copy; OpenStreetMap'
   }).addTo(map);
 
-  function createBusMarker(route) {
+  function calculateAngle(prev, curr) {
+    const dx = curr.longitude - prev.longitude;
+    const dy = curr.latitude - prev.latitude;
+    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    angle = (angle + 90 + 360) % 360;
+    return angle;
+  }
+
+  function createBusMarker(route, angle = 0) {
     const html = `
       <div class="vehicle-marker">
         <div class="vehicle-drop">
-          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/background/bus.svg" alt="bg">
+          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/background/bus.svg" alt="bg" style="transform: rotate(${angle}deg); transition: transform 0.5s;">
           <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" alt="icon">
         </div>
         <div class="vehicle-marker__text">
@@ -150,20 +159,28 @@
           changeBtn.style.display = "none";
         }
 
-        // если координаты есть, значит смена активна
         if (driverData.latitude && driverData.longitude) {
           document.getElementById("startStopBtn").innerText = "Завершить смену";
-        
-          // Автоматически возобновить GPS отслеживание
+
           if (!navigator.geolocation) return alert("Геолокация не поддерживается");
+          prevPosition = { latitude: driverData.latitude, longitude: driverData.longitude };
+
           watchId = navigator.geolocation.watchPosition(pos => {
             const { latitude, longitude } = pos.coords;
             const route = document.getElementById("routeInput").value;
+
+            let angle = 0;
+            if (prevPosition) {
+              angle = calculateAngle(prevPosition, { latitude, longitude });
+            }
+            prevPosition = { latitude, longitude };
+
             db.ref("drivers/" + currentDriver).update({
               latitude,
               longitude,
               timestamp: new Date().toISOString(),
-              route
+              route,
+              angle
             });
           }, err => {
             alert("Ошибка геолокации: " + err.message);
@@ -182,25 +199,36 @@
 
     if (btn.innerText === "Начать смену") {
       if (!navigator.geolocation) return alert("Геолокация не поддерживается");
+
       watchId = navigator.geolocation.watchPosition(pos => {
         const { latitude, longitude } = pos.coords;
         const route = document.getElementById("routeInput").value;
+
+        let angle = 0;
+        if (prevPosition) {
+          angle = calculateAngle(prevPosition, { latitude, longitude });
+        }
+        prevPosition = { latitude, longitude };
+
         db.ref("drivers/" + currentDriver).update({
           latitude,
           longitude,
           timestamp: new Date().toISOString(),
-          route
+          route,
+          angle
         });
+
         if (route) {
           document.querySelector('button[onclick="changeRoute()"]').style.display = "inline-block";
         }
       }, err => {
         alert("Ошибка геолокации: " + err.message);
       });
+
       btn.innerText = "Завершить смену";
       document.getElementById("changeRouteBtn").style.display = "inline-block";
+
     } else {
-      // завершить смену
       if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
@@ -209,18 +237,21 @@
         latitude: null,
         longitude: null,
         timestamp: null,
-        route: null
+        route: null,
+        angle: null
       });
+
+      prevPosition = null;
+
       document.getElementById("routeInput").value = "";
       document.querySelector('button[onclick="changeRoute()"]').style.display = "none";
       btn.innerText = "Начать смену";
+      document.getElementById("changeRouteBtn").style.display = "none";
 
-      // удалить маркер с карты
       if (busMarkers[currentDriver]) {
         map.removeLayer(busMarkers[currentDriver]);
         delete busMarkers[currentDriver];
       }
-      document.getElementById("changeRouteBtn").style.display = "none";
     }
   }
 
@@ -231,19 +262,17 @@
 
   function updateMarkers() {
     db.ref("drivers").once("value", snap => {
-      // очистить все маркеры
       for (let id in busMarkers) {
         map.removeLayer(busMarkers[id]);
       }
       Object.keys(busMarkers).forEach(key => delete busMarkers[key]);
 
-      // создать заново
       snap.forEach(child => {
         const key = child.key;
         const data = child.val();
         if (data.latitude && data.longitude) {
           const marker = L.marker([data.latitude, data.longitude], {
-            icon: createBusMarker(data.route)
+            icon: createBusMarker(data.route, data.angle ?? 0)
           }).addTo(map);
           marker.bindPopup("Водитель: " + key + "<br>Маршрут: " + (data.route ?? "—"));
           busMarkers[key] = marker;
