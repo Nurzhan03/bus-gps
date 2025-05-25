@@ -82,7 +82,7 @@
 <div id="driverPanel">
   <input type="text" id="routeInput" placeholder="Номер маршрута" />
   <button id="startStopBtn" onclick="toggleTracking()">Начать смену</button>
-  <button onclick="changeRoute()">Поменять маршрут</button>
+  <button id="changeRouteBtn" onclick="changeRoute()">Поменять маршрут</button>
 </div>
 
 <div id="map"></div>
@@ -147,9 +147,12 @@
         // если координаты есть, значит смена активна
         if (driverData.latitude && driverData.longitude) {
           document.getElementById("startStopBtn").innerText = "Завершить смену";
+          document.getElementById("changeRouteBtn").style.display = "inline-block";
         } else {
           document.getElementById("startStopBtn").innerText = "Начать смену";
+          document.getElementById("changeRouteBtn").style.display = "none";
         }
+
 
       } else {
         alert("Неверный PIN");
