@@ -13,8 +13,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    #map { width: 100%; height: 500px; margin-top: 20px; }
     body { font-family: Arial, sans-serif; padding: 20px; }
+    #map { width: 100%; height: 500px; margin-top: 20px; }
     input, button { padding: 8px; font-size: 16px; margin-right: 10px; }
 
     .vehicle-marker {
@@ -53,19 +53,33 @@
       height: 25px;
       line-height: 25px;
     }
+
+    #loginPanel, #controlPanel {
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
 
 <h2>GPS Трекинг автобусов (OpenStreetMap)</h2>
 
-<input type="text" id="busNumber" placeholder="Номер маршрута" />
-<button id="shiftButton" onclick="toggleShift()">Начать смену</button>
+<!-- Экран входа по PIN -->
+<div id="loginPanel">
+  <input type="password" id="pinInput" placeholder="Введите PIN-код" />
+  <button id="loginBtn">Войти</button>
+</div>
 
-<div id="map"></div>
+<!-- Панель управления для водителя -->
+<div id="controlPanel" style="display:none;">
+  <input type="text" id="busNumber" placeholder="Номер маршрута" />
+  <button id="shiftButton">Начать смену</button>
+  <button id="logoutBtn" style="margin-left:10px;">Выйти</button>
+</div>
+
+<div id="map" style="display:none;"></div>
 
 <script>
-  // Инициализация Firebase
+  // Firebase init
   const firebaseConfig = {
     apiKey: "AIzaSyBc-x0sFbt16lzmMx77dLwysXGJUOsXKsY",
     authDomain: "bustrackerweb.firebaseapp.com",
@@ -80,15 +94,21 @@
   firebase.initializeApp(firebaseConfig);
   const database = firebase.database();
 
-  let map = L.map('map').setView([49.9567, 82.6075], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
-
-  let busMarkers = {};
-  let watchId = null;
   let currentDriver = null;
+  let watchId = null;
+  let map = null;
+  let busMarkers = {};
 
+  const loginPanel = document.getElementById("loginPanel");
+  const controlPanel = document.getElementById("controlPanel");
+  const mapDiv = document.getElementById("map");
+  const pinInput = document.getElementById("pinInput");
+  const loginBtn = document.getElementById("loginBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const busNumberInput = document.getElementById("busNumber");
+  const shiftButton = document.getElementById("shiftButton");
+
+  // Создание маркера с номером маршрута
   function createBusMarker(busNumber) {
     const html = `
       <div class="vehicle-marker">
@@ -110,57 +130,52 @@
     });
   }
 
-  function toggleShift() {
-    const input = document.getElementById("busNumber");
-
-    if (watchId) {
-      stopTracking();
-      document.getElementById("shiftButton").textContent = "Начать смену";
-      return;
-    }
-
-    const pin = prompt("Введите ваш PIN-код:");
-    if (!pin) return;
-
-    database.ref("drivers").orderByChild("pin").equalTo(pin).once("value", function(snapshot) {
-      if (snapshot.exists()) {
-        snapshot.forEach(function(childSnapshot) {
-          const driverId = childSnapshot.key;
-          currentDriver = driverId;
-
-          const driverData = childSnapshot.val();
-          input.value = driverData.route || "";
-
-          startTracking(driverId);
-          document.getElementById("shiftButton").textContent = "Завершить смену";
-        });
-      } else {
-        alert("Неверный PIN-код");
+  // Обновление карты и маркеров из Firebase
+  function updateMap() {
+    database.ref("drivers").once("value", snapshot => {
+      // Удаляем старые маркеры
+      for (let key in busMarkers) {
+        map.removeLayer(busMarkers[key]);
       }
+      busMarkers = {};
+
+      snapshot.forEach(childSnapshot => {
+        const driver = childSnapshot.val();
+        if (driver.latitude && driver.longitude) {
+          const marker = L.marker([driver.latitude, driver.longitude], {
+            icon: createBusMarker(driver.route)
+          }).addTo(map).bindPopup(
+            `Маршрут: ${driver.route || "не указан"}<br>Время: ${driver.timestamp || "—"}`
+          );
+          busMarkers[childSnapshot.key] = marker;
+        }
+      });
     });
   }
 
+  // Начать отслеживание геопозиции и обновлять данные в Firebase
   function startTracking(driverId) {
     if (navigator.geolocation) {
-      watchId = navigator.geolocation.watchPosition(function(position) {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-        const route = document.getElementById("busNumber").value.trim();
+      watchId = navigator.geolocation.watchPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const route = busNumberInput.value.trim() || null;
 
         database.ref("drivers/" + driverId).update({
           latitude: lat,
           longitude: lon,
           timestamp: new Date().toISOString(),
-          route: route || null
+          route: route
         });
-      }, function(error) {
-        alert("Ошибка получения координат: " + error.message);
+      }, error => {
+        alert("Ошибка геолокации: " + error.message);
       });
     } else {
       alert("Геолокация не поддерживается этим устройством");
     }
   }
 
+  // Остановить отслеживание
   function stopTracking() {
     if (watchId !== null) {
       navigator.geolocation.clearWatch(watchId);
@@ -174,33 +189,76 @@
       });
       currentDriver = null;
     }
-    document.getElementById("busNumber").value = "";
+    busNumberInput.value = "";
   }
 
-  function updateMap() {
-    database.ref("drivers").once("value", function(snapshot) {
-      for (let key in busMarkers) {
-        map.removeLayer(busMarkers[key]);
+  // Переключение состояния смены
+  function toggleShift() {
+    if (watchId) {
+      stopTracking();
+      shiftButton.textContent = "Начать смену";
+    } else {
+      startTracking(currentDriver);
+      shiftButton.textContent = "Завершить смену";
+    }
+  }
+
+  // Обработчик логина по PIN
+  loginBtn.addEventListener("click", () => {
+    const pin = pinInput.value.trim();
+    if (!pin) {
+      alert("Введите PIN-код");
+      return;
+    }
+
+    database.ref("drivers").orderByChild("pin").equalTo(pin).once("value", snapshot => {
+      if (snapshot.exists()) {
+        snapshot.forEach(childSnapshot => {
+          currentDriver = childSnapshot.key;
+          const driverData = childSnapshot.val();
+
+          // Скрыть экран входа, показать управление и карту
+          loginPanel.style.display = "none";
+          controlPanel.style.display = "block";
+          mapDiv.style.display = "block";
+
+          busNumberInput.value = driverData.route || "";
+
+          // Инициализация карты, если еще не инициализирована
+          if (!map) {
+            map = L.map('map').setView([49.9567, 82.6075], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
+
+            // Обновление карты при изменениях в базе
+            database.ref("drivers").on("value", updateMap);
+          }
+
+          updateMap();
+
+          shiftButton.textContent = "Начать смену";
+          pinInput.value = "";
+        });
+      } else {
+        alert("Неверный PIN-код");
       }
-      busMarkers = {};
-
-      snapshot.forEach(function(childSnapshot) {
-        const driver = childSnapshot.val();
-        if (driver.latitude && driver.longitude) {
-          const marker = L.marker([driver.latitude, driver.longitude], {
-            icon: createBusMarker(driver.route)
-          }).addTo(map).bindPopup(
-            "Маршрут: " + (driver.route || "не указан") + "<br>Время: " + (driver.timestamp || "—")
-          );
-          busMarkers[childSnapshot.key] = marker;
-        }
-      });
     });
-  }
+  });
 
-  updateMap();
-  database.ref("drivers").on("value", updateMap);
+  // Кнопка выхода — сбрасываем всё и возвращаемся к экрану входа
+  logoutBtn.addEventListener("click", () => {
+    stopTracking();
+    currentDriver = null;
+    loginPanel.style.display = "block";
+    controlPanel.style.display = "none";
+    mapDiv.style.display = "none";
+    pinInput.value = "";
+  });
 
+  shiftButton.addEventListener("click", toggleShift);
+
+  // Перед уходом со страницы остановить трекинг
   window.addEventListener("beforeunload", () => {
     stopTracking();
   });
