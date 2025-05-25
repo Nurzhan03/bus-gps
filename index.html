@@ -208,8 +208,11 @@
       db.ref("drivers/" + currentDriver).update({
         latitude: null,
         longitude: null,
-        timestamp: null
+        timestamp: null,
+        route: null
       });
+      document.getElementById("routeInput").value = "";
+      document.querySelector('button[onclick="changeRoute()"]').style.display = "none";
       btn.innerText = "Начать смену";
 
       // удалить маркер с карты
