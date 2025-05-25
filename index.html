@@ -72,11 +72,12 @@
 <!-- Панель управления для водителя -->
 <div id="controlPanel" style="display:none;">
   <input type="text" id="busNumber" placeholder="Номер маршрута" />
+  <button id="changeRouteBtn">Поменять маршрут</button>
   <button id="shiftButton">Начать смену</button>
   <button id="logoutBtn" style="margin-left:10px;">Выйти</button>
 </div>
 
-<div id="map" style="display:none;"></div>
+<div id="map"></div>
 
 <script>
   // Firebase init
@@ -107,6 +108,7 @@
   const logoutBtn = document.getElementById("logoutBtn");
   const busNumberInput = document.getElementById("busNumber");
   const shiftButton = document.getElementById("shiftButton");
+  const changeRouteBtn = document.getElementById("changeRouteBtn");
 
   // Создание маркера с номером маршрута
   function createBusMarker(busNumber) {
@@ -203,6 +205,18 @@
     }
   }
 
+  // Обновление маршрута в базе (кнопка "Поменять маршрут")
+  changeRouteBtn.addEventListener("click", () => {
+    if (!currentDriver) {
+      alert("Войдите в аккаунт");
+      return;
+    }
+    const newRoute = busNumberInput.value.trim() || null;
+    database.ref("drivers/" + currentDriver).update({ route: newRoute });
+    alert("Маршрут обновлен");
+    updateMap();
+  });
+
   // Обработчик логина по PIN
   loginBtn.addEventListener("click", () => {
     const pin = pinInput.value.trim();
@@ -217,10 +231,9 @@
           currentDriver = childSnapshot.key;
           const driverData = childSnapshot.val();
 
-          // Скрыть экран входа, показать управление и карту
+          // Скрыть экран входа, показать управление
           loginPanel.style.display = "none";
           controlPanel.style.display = "block";
-          mapDiv.style.display = "block";
 
           busNumberInput.value = driverData.route || "";
 
@@ -252,8 +265,7 @@
     currentDriver = null;
     loginPanel.style.display = "block";
     controlPanel.style.display = "none";
-    mapDiv.style.display = "none";
-    pinInput.value = "";
+    busNumberInput.value = "";
   });
 
   shiftButton.addEventListener("click", toggleShift);
@@ -262,6 +274,9 @@
   window.addEventListener("beforeunload", () => {
     stopTracking();
   });
+
+  // Карта отображается всегда
+  // Панель управления — только после входа
 </script>
 
 </body>
