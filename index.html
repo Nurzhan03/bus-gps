@@ -147,13 +147,24 @@
         // если координаты есть, значит смена активна
         if (driverData.latitude && driverData.longitude) {
           document.getElementById("startStopBtn").innerText = "Завершить смену";
-          document.getElementById("changeRouteBtn").style.display = "inline-block";
+        
+          // Автоматически возобновить GPS отслеживание
+          if (!navigator.geolocation) return alert("Геолокация не поддерживается");
+          watchId = navigator.geolocation.watchPosition(pos => {
+            const { latitude, longitude } = pos.coords;
+            const route = document.getElementById("routeInput").value;
+            db.ref("drivers/" + currentDriver).update({
+              latitude,
+              longitude,
+              timestamp: new Date().toISOString(),
+              route
+            });
+          }, err => {
+            alert("Ошибка геолокации: " + err.message);
+          });
         } else {
           document.getElementById("startStopBtn").innerText = "Начать смену";
-          document.getElementById("changeRouteBtn").style.display = "none";
         }
-
-
       } else {
         alert("Неверный PIN");
       }
