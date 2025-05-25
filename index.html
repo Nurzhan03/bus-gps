@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>Bus Tracker (с авторизацией)</title>
+  <title>Bus Tracker (OpenStreetMap)</title>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -15,7 +15,8 @@
   <style>
     #map { width: 100%; height: 500px; margin-top: 20px; }
     body { font-family: Arial, sans-serif; padding: 20px; }
-    input, button { padding: 8px; font-size: 16px; margin-right: 10px; margin-bottom: 10px; }
+    input, button { padding: 8px; font-size: 16px; margin-right: 10px; }
+
     .vehicle-marker {
       position: relative;
       width: 90px;
@@ -50,27 +51,21 @@
       color: black;
       align-items: center;
       height: 25px;
+      line-height: 25px;
     }
   </style>
 </head>
 <body>
 
-<h2>Вход для водителя</h2>
-<input type="text" id="pinInput" placeholder="Введите PIN-код" />
-<button onclick="login()">Войти</button>
+<h2>GPS Трекинг автобусов (OpenStreetMap)</h2>
 
-<div id="driverPanel" style="display: none;">
-  <h3 id="welcomeText"></h3>
-  <input type="text" id="routeInput" placeholder="Номер маршрута" />
-  <button onclick="changeRoute()">Сменить маршрут</button>
-  <button onclick="startTracking()">Начать смену</button>
-</div>
-
-<button onclick="clearDatabase()">Очистить базу</button>
+<input type="text" id="busNumber" placeholder="Номер маршрута" />
+<button id="shiftButton" onclick="toggleShift()">Начать смену</button>
 
 <div id="map"></div>
 
 <script>
+  // Инициализация Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyBc-x0sFbt16lzmMx77dLwysXGJUOsXKsY",
     authDomain: "bustrackerweb.firebaseapp.com",
@@ -81,113 +76,134 @@
     measurementId: "G-TRVJFYPJXZ",
     databaseURL: "https://bustrackerweb-default-rtdb.europe-west1.firebasedatabase.app"
   };
+
   firebase.initializeApp(firebaseConfig);
   const database = firebase.database();
 
-  let currentPin = null;
-  let watchId = null;
   let map = L.map('map').setView([49.9567, 82.6075], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-  let markers = {};
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+
+  let busMarkers = {};
+  let watchId = null;
+  let currentDriver = null;
 
   function createBusMarker(busNumber) {
     const html = `
       <div class="vehicle-marker">
         <div class="vehicle-drop">
-          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/background/bus.svg" alt="bg">
+          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/background/bus.svg" alt="background">
           <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" alt="icon">
         </div>
         <div class="vehicle-marker__text">
-          <span>${busNumber}</span>
+          <span>${busNumber || ''}</span>
         </div>
       </div>
     `;
-    return L.divIcon({ html, className: "", iconSize: [90, 25], iconAnchor: [45, 12] });
+    return L.divIcon({
+      html: html,
+      className: "",
+      iconSize: [90, 25],
+      iconAnchor: [45, 12],
+      popupAnchor: [0, -25]
+    });
   }
 
-  function login() {
-    const pin = document.getElementById("pinInput").value;
-    database.ref("drivers/" + pin).once("value").then(snapshot => {
+  function toggleShift() {
+    const input = document.getElementById("busNumber");
+
+    if (watchId) {
+      stopTracking();
+      document.getElementById("shiftButton").textContent = "Начать смену";
+      return;
+    }
+
+    const pin = prompt("Введите ваш PIN-код:");
+    if (!pin) return;
+
+    database.ref("drivers").orderByChild("pin").equalTo(pin).once("value", function(snapshot) {
       if (snapshot.exists()) {
-        currentPin = pin;
-        const driver = snapshot.val();
-        document.getElementById("driverPanel").style.display = "block";
-        document.getElementById("welcomeText").innerText = `Добро пожаловать, ${driver.name}`;
-        document.getElementById("routeInput").value = driver.busNumber;
-        updateMap();
+        snapshot.forEach(function(childSnapshot) {
+          const driverId = childSnapshot.key;
+          currentDriver = driverId;
+
+          const driverData = childSnapshot.val();
+          input.value = driverData.route || "";
+
+          startTracking(driverId);
+          document.getElementById("shiftButton").textContent = "Завершить смену";
+        });
       } else {
         alert("Неверный PIN-код");
       }
     });
   }
 
-  function changeRoute() {
-    const newRoute = document.getElementById("routeInput").value;
-    if (newRoute && currentPin) {
-      database.ref("drivers/" + currentPin + "/busNumber").set(newRoute);
+  function startTracking(driverId) {
+    if (navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(function(position) {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        const route = document.getElementById("busNumber").value.trim();
+
+        database.ref("drivers/" + driverId).update({
+          latitude: lat,
+          longitude: lon,
+          timestamp: new Date().toISOString(),
+          route: route || null
+        });
+      }, function(error) {
+        alert("Ошибка получения координат: " + error.message);
+      });
+    } else {
+      alert("Геолокация не поддерживается этим устройством");
     }
   }
 
-  function startTracking() {
-    if (navigator.geolocation && currentPin) {
-      watchId = navigator.geolocation.watchPosition(position => {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-        database.ref("drivers/" + currentPin).update({
-          latitude: lat,
-          longitude: lon,
-          timestamp: new Date().toISOString()
-        });
-      }, error => {
-        alert("Ошибка геолокации: " + error.message);
-      });
-    } else {
-      alert("Геолокация не поддерживается");
+  function stopTracking() {
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
     }
+    if (currentDriver) {
+      database.ref("drivers/" + currentDriver).update({
+        latitude: null,
+        longitude: null,
+        timestamp: null
+      });
+      currentDriver = null;
+    }
+    document.getElementById("busNumber").value = "";
   }
 
   function updateMap() {
-    database.ref("drivers").on("value", snapshot => {
-      // Удаляем старые маркеры
-      for (let key in markers) {
-        map.removeLayer(markers[key]);
+    database.ref("drivers").once("value", function(snapshot) {
+      for (let key in busMarkers) {
+        map.removeLayer(busMarkers[key]);
       }
-      markers = {};
+      busMarkers = {};
 
-      snapshot.forEach(child => {
-        const d = child.val();
-        if (d.latitude && d.longitude) {
-          const marker = L.marker([d.latitude, d.longitude], {
-            icon: createBusMarker(d.busNumber)
-          }).addTo(map).bindPopup(`Водитель: ${d.name}<br>Маршрут: ${d.busNumber}`);
-          markers[child.key] = marker;
+      snapshot.forEach(function(childSnapshot) {
+        const driver = childSnapshot.val();
+        if (driver.latitude && driver.longitude) {
+          const marker = L.marker([driver.latitude, driver.longitude], {
+            icon: createBusMarker(driver.route)
+          }).addTo(map).bindPopup(
+            "Маршрут: " + (driver.route || "не указан") + "<br>Время: " + (driver.timestamp || "—")
+          );
+          busMarkers[childSnapshot.key] = marker;
         }
       });
     });
   }
 
-  function clearDatabase() {
-    if (confirm("Очистить все координаты водителей?")) {
-      database.ref("drivers").once("value", snapshot => {
-        snapshot.forEach(child => {
-          const pin = child.key;
-          database.ref("drivers/" + pin + "/latitude").remove();
-          database.ref("drivers/" + pin + "/longitude").remove();
-          database.ref("drivers/" + pin + "/timestamp").remove();
-        });
-        // Очистить маркеры
-        for (let key in markers) map.removeLayer(markers[key]);
-        markers = {};
-        alert("База очищена.");
-      });
-    }
-  }
-
-  window.addEventListener('beforeunload', () => {
-    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-  });
-
   updateMap();
+  database.ref("drivers").on("value", updateMap);
+
+  window.addEventListener("beforeunload", () => {
+    stopTracking();
+  });
 </script>
 
 </body>
