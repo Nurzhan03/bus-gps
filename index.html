@@ -111,18 +111,23 @@
   }).addTo(map);
 
   function calculateAngle(prev, curr) {
-    const dx = curr.longitude - prev.longitude;
-    const dy = curr.latitude - prev.latitude;
-    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    angle = (angle + 90 + 360) % 360;
-    return angle;
+    const φ1 = prev.latitude * Math.PI / 180;
+    const φ2 = curr.latitude * Math.PI / 180;
+    const λ1 = prev.longitude * Math.PI / 180;
+    const λ2 = curr.longitude * Math.PI / 180;
+  
+    const y = Math.sin(λ2 - λ1) * Math.cos(φ2);
+    const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1);
+    let θ = Math.atan2(y, x) * 180 / Math.PI;
+  
+    return (θ + 360) % 360; // Азимут от севера
   }
 
   function createBusMarker(route, angle = 0) {
     const html = `
       <div class="vehicle-marker">
         <div class="vehicle-drop">
-          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/background/bus.svg" alt="bg" style="transform: rotate(${angle}deg); transition: transform 0.5s;">
+          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/background/bus.svg" alt="bg" style="transform: rotate(${(angle + 180) % 360}deg); transition: transform 0.5s;">
           <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" alt="icon">
         </div>
         <div class="vehicle-marker__text">
