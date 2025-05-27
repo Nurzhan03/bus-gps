@@ -1,70 +1,98 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bus Tracker</title>
-
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.3.2/dist/socket.io.min.js"></script>
+  <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+  <script src="script.js" defer></script>
   <style>
+    /* Базовая стилизация */
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
+      padding: 10px;
+      margin: 0;
+      background-color: #f5f5f5;
     }
+
+    input, button {
+      padding: 12px;
+      font-size: 16px;
+      width: 100%;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    /* Карта */
     #map {
       width: 100%;
-      height: 500px;
-      margin-top: 20px;
+      height: 80vh;
+      margin-top: 10px;
     }
-    input, button {
-      padding: 8px;
-      font-size: 16px;
-      margin-right: 10px;
+
+    /* Панель водителя */
+    #driverPanel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
       margin-bottom: 10px;
     }
+
+    /* Стили для маркеров */
     .vehicle-marker {
-      position: relative;
-      width: 90px;
-      height: 25px;
       display: flex;
       align-items: center;
-      gap: 0px;
-      user-select: none;
-    }
-    .vehicle-drop {
-      position: relative;
-      width: 25px;
-      height: 25px;
-      margin-right: 3px;
-    }
-    .vehicle-drop img {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 25px;
-      height: 25px;
-    }
-    .vehicle-drop img:nth-child(2) {
-      left: -2px;
-      top: -1px;
-    }
-    .vehicle-marker__text {
-      display: flex;
-      background: #fff;
-      padding: 0 6px;
+      background-color: #007bff;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 8px;
       font-weight: bold;
-      font-size: 16px;
-      color: black;
-      align-items: center;
-      height: 25px;
-      line-height: 25px;
+      white-space: nowrap;
     }
-    #driverPanel {
-      display: none;
+
+    .vehicle-marker__text {
+      font-size: 14px;
+    }
+
+    .vehicle-drop {
+      width: 24px;
+      height: 24px;
+      margin-left: 6px;
+    }
+
+    .vehicle-drop img {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Мобильная адаптация */
+    @media (max-width: 600px) {
+      .vehicle-marker {
+        width: auto;
+        height: auto;
+        padding: 2px 6px;
+      }
+
+      .vehicle-marker__text {
+        font-size: 12px;
+      }
+
+      .vehicle-drop {
+        width: 20px;
+        height: 20px;
+      }
+
+      .vehicle-drop img {
+        width: 20px;
+        height: 20px;
+      }
+
+      input, button {
+        font-size: 15px;
+      }
     }
   </style>
 </head>
