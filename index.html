@@ -229,6 +229,10 @@
       }
     }, err => {
       alert("Ошибка геолокации: " + err.message);
+    }, {
+      enableHighAccuracy: true, // Важный параметр
+      maximumAge: 0,
+      timeout: 10000
     });
   }
 
