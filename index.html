@@ -103,48 +103,40 @@
   let currentDriver = null;
   let watchId = null;
   let prevPosition = null;
-  const positionHistory = [];
-  const MAX_HISTORY = 5;
-  let lastAngle = 0;
   const busMarkers = {};
 
-  const map = L.map('map').setView([49.9567, 82.6075], 15); // автофокус на деревню
+  const map = L.map('map').setView([49.9693, 82.6026], 18);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap'
   }).addTo(map);
 
-  function calculateAngle(prev, curr) {
-    const φ1 = prev.latitude * Math.PI / 180;
-    const φ2 = curr.latitude * Math.PI / 180;
-    const λ1 = prev.longitude * Math.PI / 180;
-    const λ2 = curr.longitude * Math.PI / 180;
+  const routeCoords = [
+    [49.969931, 82.603020],
+    [49.969350, 82.602750],
+    [49.968737, 82.602285]
+  ];
+  const routeLine = L.polyline(routeCoords, { color: 'blue' }).addTo(map);
 
-    const y = Math.sin(λ2 - λ1) * Math.cos(φ2);
-    const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1);
-    let θ = Math.atan2(y, x) * 180 / Math.PI;
+  function getClosestPointOnRoute(lat, lng) {
+    let closest = routeCoords[0];
+    let minDist = Infinity;
 
-    return (θ + 360) % 360;
+    for (let point of routeCoords) {
+      const dist = Math.hypot(point[0] - lat, point[1] - lng);
+      if (dist < minDist) {
+        closest = point;
+        minDist = dist;
+      }
+    }
+
+    return closest;
   }
 
-  function calculateAverageAngle(history) {
-    if (history.length < 2) return lastAngle;
-    const first = history[0];
-    const last = history[history.length - 1];
-    return calculateAngle(first, last);
-  }
-
-  function getDistanceMeters(a, b) {
-    const R = 6371000; // радиус Земли
-    const dLat = (b.latitude - a.latitude) * Math.PI / 180;
-    const dLon = (b.longitude - a.longitude) * Math.PI / 180;
-    const lat1 = a.latitude * Math.PI / 180;
-    const lat2 = b.latitude * Math.PI / 180;
-
-    const sinDLat = Math.sin(dLat / 2);
-    const sinDLon = Math.sin(dLon / 2);
-    const aDist = sinDLat * sinDLat + sinDLon * sinDLon * Math.cos(lat1) * Math.cos(lat2);
-    const c = 2 * Math.atan2(Math.sqrt(aDist), Math.sqrt(1 - aDist));
-    return R * c;
+  function getAngleFromSegment(p1, p2) {
+    const dx = p2[1] - p1[1];
+    const dy = p2[0] - p1[0];
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    return (angle + 360) % 360;
   }
 
   function createBusMarker(route, angle = 0) {
@@ -177,62 +169,15 @@
 
         document.getElementById("loginPanel").style.display = "none";
         document.getElementById("driverPanel").style.display = "block";
+
         document.getElementById("routeInput").value = driverData.route ?? "";
         const changeBtn = document.querySelector('button[onclick="changeRoute()"]');
         changeBtn.style.display = driverData.route ? "inline-block" : "none";
 
-        if (driverData.latitude && driverData.longitude) {
-          document.getElementById("startStopBtn").innerText = "Завершить смену";
-          prevPosition = { latitude: driverData.latitude, longitude: driverData.longitude };
-
-          if (!navigator.geolocation) return alert("Геолокация не поддерживается");
-          startTracking();
-        } else {
-          document.getElementById("startStopBtn").innerText = "Начать смену";
-        }
+        document.getElementById("startStopBtn").innerText = driverData.latitude ? "Завершить смену" : "Начать смену";
       } else {
         alert("Неверный PIN");
       }
-    });
-  }
-
-  function startTracking() {
-    watchId = navigator.geolocation.watchPosition(pos => {
-      const { latitude, longitude } = pos.coords;
-      const route = document.getElementById("routeInput").value;
-
-      const currPos = { latitude, longitude };
-      positionHistory.push(currPos);
-      if (positionHistory.length > MAX_HISTORY) positionHistory.shift();
-
-      let angle = lastAngle;
-      if (positionHistory.length >= 2) {
-        const dist = getDistanceMeters(positionHistory[0], positionHistory[positionHistory.length - 1]);
-        if (dist > 5) {
-          angle = calculateAverageAngle(positionHistory);
-          lastAngle = angle;
-        }
-      }
-
-      prevPosition = currPos;
-
-      db.ref("drivers/" + currentDriver).update({
-        latitude,
-        longitude,
-        timestamp: new Date().toISOString(),
-        route,
-        angle
-      });
-
-      if (route) {
-        document.querySelector('button[onclick="changeRoute()"]').style.display = "inline-block";
-      }
-    }, err => {
-      alert("Ошибка геолокации: " + err.message);
-    }, {
-      enableHighAccuracy: true, // Важный параметр
-      maximumAge: 0,
-      timeout: 10000
     });
   }
 
@@ -241,7 +186,27 @@
 
     if (btn.innerText === "Начать смену") {
       if (!navigator.geolocation) return alert("Геолокация не поддерживается");
-      startTracking();
+
+      watchId = navigator.geolocation.watchPosition(pos => {
+        const { latitude, longitude } = pos.coords;
+        const route = document.getElementById("routeInput").value;
+
+        const closest = getClosestPointOnRoute(latitude, longitude);
+        const currentIdx = routeCoords.findIndex(p => p[0] === closest[0] && p[1] === closest[1]);
+        const next = routeCoords[currentIdx + 1] ?? closest;
+        const angle = getAngleFromSegment(closest, next);
+
+        db.ref("drivers/" + currentDriver).update({
+          latitude: closest[0],
+          longitude: closest[1],
+          timestamp: new Date().toISOString(),
+          route,
+          angle
+        });
+      }, err => {
+        alert("Ошибка геолокации: " + err.message);
+      });
+
       btn.innerText = "Завершить смену";
       document.getElementById("changeRouteBtn").style.display = "inline-block";
     } else {
@@ -249,7 +214,6 @@
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
       }
-
       db.ref("drivers/" + currentDriver).update({
         latitude: null,
         longitude: null,
@@ -257,13 +221,10 @@
         route: null,
         angle: null
       });
-
       prevPosition = null;
-      positionHistory.length = 0;
-      lastAngle = 0;
 
       document.getElementById("routeInput").value = "";
-      document.querySelector('button[onclick="changeRoute()"]').style.display = "none";
+      document.querySelector('button[onclick="changeRoute()"]')?.style.display = "none";
       btn.innerText = "Начать смену";
       document.getElementById("changeRouteBtn").style.display = "none";
 
