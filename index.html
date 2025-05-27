@@ -154,86 +154,18 @@
   let prevPosition = null;
   const busMarkers = {};
 
-  const map = L.map('map').setView([49.9693, 82.6026], 16);
+  const map = L.map('map').setView([49.9693, 82.6026], 20);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap'
   }).addTo(map);
 
-  // Координаты дороги (пример с двумя точками)
-  const roadCoords = [
-    [49.969931, 82.603020],
-    [49.968737, 82.602285]
-  ];
-
-  // Создаем линию, но не добавляем на карту (не видна)
-  const roadLine = L.polyline(roadCoords);
-
-  // Функция для поиска ближайшей точки на линии к позиции (latLng)
-  function getClosestPointOnLine(latlng, line) {
-    let minDist = Infinity;
-    let closestPoint = null;
-    let closestSegmentIndex = 0;
-
-    // Перебираем сегменты линии
-    const points = line.getLatLngs();
-    for (let i = 0; i < points.length - 1; i++) {
-      const p1 = points[i];
-      const p2 = points[i + 1];
-
-      // Найдем проекцию точки на отрезок p1-p2
-      const projected = projectPointOnSegment(latlng, p1, p2);
-
-      // Вычисляем дистанцию между latlng и проекцией
-      const dist = latlng.distanceTo(projected);
-
-      if (dist < minDist) {
-        minDist = dist;
-        closestPoint = projected;
-        closestSegmentIndex = i;
-      }
-    }
-    return { point: closestPoint, segmentIndex: closestSegmentIndex };
-  }
-
-  // Проекция точки на отрезок p1-p2
-  function projectPointOnSegment(p, p1, p2) {
-    // Конвертируем в векторные координаты (в метрах) для удобства
-    const toMeters = (latlng) => {
-      return map.latLngToLayerPoint(latlng);
-    };
-
-    const fromMeters = (point) => {
-      return map.layerPointToLatLng(point);
-    };
-
-    const pM = toMeters(p);
-    const p1M = toMeters(p1);
-    const p2M = toMeters(p2);
-
-    const dx = p2M.x - p1M.x;
-    const dy = p2M.y - p1M.y;
-
-    if (dx === 0 && dy === 0) return p1;
-
-    const t = ((pM.x - p1M.x) * dx + (pM.y - p1M.y) * dy) / (dx * dx + dy * dy);
-
-    let tClamped = Math.max(0, Math.min(1, t));
-
-    const projX = p1M.x + tClamped * dx;
-    const projY = p1M.y + tClamped * dy;
-
-    return fromMeters(L.point(projX, projY));
-  }
-
-  // Вычисление угла между двумя точками в градусах (для поворота маркера)
   function calculateAngle(p1, p2) {
     const lat1 = p1.lat * Math.PI / 180;
     const lat2 = p2.lat * Math.PI / 180;
     const dLon = (p2.lng - p1.lng) * Math.PI / 180;
 
     const y = Math.sin(dLon) * Math.cos(lat2);
-    const x = Math.cos(lat1) * Math.sin(lat2) -
-              Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
     let brng = Math.atan2(y, x) * 180 / Math.PI;
 
     return (brng + 360) % 360;
@@ -272,11 +204,8 @@
 
         document.getElementById("routeInput").value = driverData.route ?? "";
         const changeBtn = document.querySelector('button[onclick="changeRoute()"]');
-        if (driverData.route) {
-          changeBtn.style.display = "inline-block";
-        } else {
-          changeBtn.style.display = "none";
-        }
+        if (driverData.route) changeBtn.style.display = "inline-block";
+        else changeBtn.style.display = "none";
 
         if (driverData.latitude && driverData.longitude) {
           document.getElementById("startStopBtn").innerText = "Завершить смену";
@@ -284,32 +213,7 @@
           if (!navigator.geolocation) return alert("Геолокация не поддерживается");
           prevPosition = L.latLng(driverData.latitude, driverData.longitude);
 
-          watchId = navigator.geolocation.watchPosition(pos => {
-            const currPos = L.latLng(pos.coords.latitude, pos.coords.longitude);
-            const route = document.getElementById("routeInput").value;
-
-            // Привязываем текущую позицию к дороге
-            const { point: snappedPoint, segmentIndex } = getClosestPointOnLine(currPos, roadLine);
-
-            let angle = 0;
-            if (prevPosition) {
-              // Для вычисления угла берем текущую "привязанную" точку и следующую точку дороги
-              const nextPointIndex = Math.min(segmentIndex + 1, roadCoords.length - 1);
-              const nextPoint = L.latLng(roadCoords[nextPointIndex][0], roadCoords[nextPointIndex][1]);
-              angle = calculateAngle(snappedPoint, nextPoint);
-            }
-            prevPosition = snappedPoint;
-
-            db.ref("drivers/" + currentDriver).update({
-              latitude: snappedPoint.lat,
-              longitude: snappedPoint.lng,
-              timestamp: new Date().toISOString(),
-              route,
-              angle
-            });
-          }, err => {
-            alert("Ошибка геолокации: " + err.message);
-          });
+          startTracking();
         } else {
           document.getElementById("startStopBtn").innerText = "Начать смену";
         }
@@ -319,49 +223,52 @@
     });
   }
 
+  function startTracking() {
+    watchId = navigator.geolocation.watchPosition(pos => {
+      const currPos = L.latLng(pos.coords.latitude, pos.coords.longitude);
+      const route = document.getElementById("routeInput").value;
+
+      const distanceMoved = prevPosition ? currPos.distanceTo(prevPosition) : Infinity;
+      if (distanceMoved < 1) return; // Игнорируем мелкие скачки < 1 метра
+
+      let angle = 0;
+      if (prevPosition) {
+        angle = calculateAngle(prevPosition, currPos);
+      }
+      prevPosition = currPos;
+
+      db.ref("drivers/" + currentDriver).update({
+        latitude: currPos.lat,
+        longitude: currPos.lng,
+        timestamp: new Date().toISOString(),
+        route,
+        angle
+      });
+
+      map.panTo(currPos, { animate: true, duration: 0.5 });
+
+    }, err => {
+      alert("Ошибка геолокации: " + err.message);
+    }, {
+      enableHighAccuracy: true,
+      maximumAge: 1000
+    });
+  }
+
   function toggleTracking() {
     const btn = document.getElementById("startStopBtn");
 
     if (btn.innerText === "Начать смену") {
       if (!navigator.geolocation) return alert("Геолокация не поддерживается");
-
-      watchId = navigator.geolocation.watchPosition(pos => {
-        const currPos = L.latLng(pos.coords.latitude, pos.coords.longitude);
-        const route = document.getElementById("routeInput").value;
-
-        const { point: snappedPoint, segmentIndex } = getClosestPointOnLine(currPos, roadLine);
-
-        let angle = 0;
-        if (prevPosition) {
-          const nextPointIndex = Math.min(segmentIndex + 1, roadCoords.length - 1);
-          const nextPoint = L.latLng(roadCoords[nextPointIndex][0], roadCoords[nextPointIndex][1]);
-          angle = calculateAngle(snappedPoint, nextPoint);
-        }
-        prevPosition = snappedPoint;
-
-        db.ref("drivers/" + currentDriver).update({
-          latitude: snappedPoint.lat,
-          longitude: snappedPoint.lng,
-          timestamp: new Date().toISOString(),
-          route,
-          angle
-        });
-
-        if (route) {
-          document.querySelector('button[onclick="changeRoute()"]').style.display = "inline-block";
-        }
-      }, err => {
-        alert("Ошибка геолокации: " + err.message);
-      });
-
+      startTracking();
       btn.innerText = "Завершить смену";
       document.getElementById("changeRouteBtn").style.display = "inline-block";
-
     } else {
       if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
       }
+
       db.ref("drivers/" + currentDriver).update({
         latitude: null,
         longitude: null,
@@ -371,7 +278,6 @@
       });
 
       prevPosition = null;
-
       document.getElementById("routeInput").value = "";
       document.querySelector('button[onclick="changeRoute()"]').style.display = "none";
       btn.innerText = "Начать смену";
