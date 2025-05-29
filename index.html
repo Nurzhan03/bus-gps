@@ -297,22 +297,43 @@
 
   function updateMarkers() {
     db.ref("drivers").once("value", snap => {
-      for (let id in busMarkers) {
-        map.removeLayer(busMarkers[id]);
-      }
-      Object.keys(busMarkers).forEach(key => delete busMarkers[key]);
-
+      const existingKeys = new Set();
+  
       snap.forEach(child => {
         const key = child.key;
         const data = child.val();
+  
         if (data.latitude && data.longitude) {
-          const marker = L.marker([data.latitude, data.longitude], {
-            icon: createBusMarker(data.route, data.angle ?? 0)
-          }).addTo(map);
-          marker.bindPopup("Водитель: " + key + "<br>Маршрут: " + (data.route ?? "—"));
-          busMarkers[key] = marker;
+          const latlng = L.latLng(data.latitude, data.longitude);
+          const angle = data.angle ?? 0;
+  
+          if (busMarkers[key]) {
+            // 🟡 Обновить позицию и иконку плавно
+            busMarkers[key].setLatLng(latlng);
+  
+            const icon = createBusMarker(data.route, angle);
+            busMarkers[key].setIcon(icon);
+          } else {
+            // 🟢 Создать новый маркер
+            const marker = L.marker(latlng, {
+              icon: createBusMarker(data.route, angle)
+            }).addTo(map);
+  
+            marker.bindPopup("Водитель: " + key + "<br>Маршрут: " + (data.route ?? "—"));
+            busMarkers[key] = marker;
+          }
+  
+          existingKeys.add(key);
         }
       });
+  
+      // 🔴 Удаляем маркеры, которых больше нет в базе
+      for (let key in busMarkers) {
+        if (!existingKeys.has(key)) {
+          map.removeLayer(busMarkers[key]);
+          delete busMarkers[key];
+        }
+      }
     });
   }
 
