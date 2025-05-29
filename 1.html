@@ -1993,33 +1993,40 @@
                 return `
                     <div class="bus-time-item">
                         <div class="bus-time-number"><img style="position: relative; top: 9px; left: 5px;" src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" width="30" height="30"> ${escapeHtml(info.busNumber)}</div>
-                        <div class="bus-time-arrival">
-                            <span class="bus-time-dot"></span>
-                            ${remainingTimeFormatted}
-                        </div>
                     </div>
                 `;
             }).join("");
             
             stopInfoWindow.innerHTML = `
-                <div class="stop-info-window">
-                    <div class="stop-info-title">${escapeHtml(stopName)}</div>
-                    <div class="stop-info-subtitle">Транспорт на остановке</div>
-                    <div class="bus-numbers-list">
-                        <img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="15" height="15">
-                        ${busNumbersHTML}
-                    </div>
-                    <div class="bus-time-container">
-                        ${busTimesHTML}
-                    </div>
-                    <div class="action-buttons" style="margin-top: 15px;">
-                        <button class="action-button" onclick="showMap('${escapeHtml(stopName)}')">Карта</button>
-                        <button class="action-button" onclick="showStopSchedule('${escapeHtml(stopName)}')">Расписание</button>
-                        <button class="action-button" onclick="addToFavorites('${escapeHtml(stopName)}')">Избранное</button>
-                        <button class="action-button" onclick="showRouteFromStop('${escapeHtml(stopName)}')">Маршрут</button>
-                    </div>
-                    <button class="action-btn" onclick="closeStopWindow()" style="margin-top: 12px; width: 100%; padding: 8px; font-size: 14px;">Закрыть</button>
+              <div class="stop-info-window">
+                <div class="stop-info-title">${escapeHtml(stopName)}</div>
+                <div class="stop-info-subtitle">Транспорт на остановке</div>
+                <div class="bus-numbers-list">
+                  <img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="15" height="15">
+                  ${busNumbersHTML}
                 </div>
+                <div class="bus-time-arrival">
+                  <span class="bus-time-dot"></span>
+                  ${arrivalInfo.length > 0 ? (arrivalInfo[0].isBoarding
+                    ? `<span class="arriving-text">Прибывает</span>`
+                    : arrivalInfo[0].remainingTime === 1
+                      ? "<1 мин"
+                      : arrivalInfo[0].remainingTime >= 60
+                        ? `${Math.floor(arrivalInfo[0].remainingTime / 60)}ч ${arrivalInfo[0].remainingTime % 60}м`
+                        : `${arrivalInfo[0].remainingTime} мин`)
+                    : "-"}
+                </div>
+                <div class="bus-time-container">
+                  ${busTimesHTML}
+                </div>
+                <div class="action-buttons" style="margin-top: 15px;">
+                  <button class="action-button" onclick="showMap('${escapeHtml(stopName)}')">Карта</button>
+                  <button class="action-button" onclick="showStopSchedule('${escapeHtml(stopName)}')">Расписание</button>
+                  <button class="action-button" onclick="addToFavorites('${escapeHtml(stopName)}')">Избранное</button>
+                  <button class="action-button" onclick="showRouteFromStop('${escapeHtml(stopName)}')">Маршрут</button>
+                </div>
+                <button class="action-btn" onclick="closeStopWindow()" style="margin-top: 12px; width: 100%; padding: 8px; font-size: 14px;">Закрыть</button>
+              </div>
             `;
             stopInfoWindow.style.display = 'block';
             
