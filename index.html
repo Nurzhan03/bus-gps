@@ -295,45 +295,84 @@
     db.ref("drivers/" + currentDriver).update({ route });
   }
 
+  function animateMarker(marker, fromLatLng, toLatLng, duration = 1000) {
+    const startTime = performance.now();
+
+    function animate(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+  
+      const lat = fromLatLng.lat + (toLatLng.lat - fromLatLng.lat) * progress;
+      const lng = fromLatLng.lng + (toLatLng.lng - fromLatLng.lng) * progress;
+      marker.setLatLng([lat, lng]);
+  
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  function animateRotation(marker, fromAngle, toAngle, duration = 500) {
+    const bgImg = marker.getElement().querySelector('img[alt="bg"]');
+    if (!bgImg) return;
+  
+    const startTime = performance.now();
+  
+    function animate(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+  
+      // интерполяция угла
+      const delta = ((((toAngle - fromAngle + 540) % 360) - 180) + 360) % 360;
+      const currentAngle = (fromAngle + delta * progress) % 360;
+  
+      bgImg.style.transform = `rotate(${(currentAngle + 180) % 360}deg)`;
+  
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    }
+  
+    requestAnimationFrame(animate);
+  }
+  
   function updateMarkers() {
     db.ref("drivers").once("value", snap => {
-      const existingKeys = new Set();
-  
       snap.forEach(child => {
         const key = child.key;
         const data = child.val();
   
         if (data.latitude && data.longitude) {
-          const latlng = L.latLng(data.latitude, data.longitude);
+          const newLatLng = L.latLng(data.latitude, data.longitude);
           const angle = data.angle ?? 0;
   
           if (busMarkers[key]) {
-            // 🟡 Обновить позицию и иконку плавно
-            busMarkers[key].setLatLng(latlng);
+            // Плавное перемещение
+            animateMarker(busMarkers[key].marker, busMarkers[key].marker.getLatLng(), newLatLng);
   
-            const icon = createBusMarker(data.route, angle);
-            busMarkers[key].setIcon(icon);
+            // Плавный поворот
+            animateRotation(busMarkers[key].marker, busMarkers[key].angle ?? 0, angle);
+  
+            // Обновим иконку (но не трогаем bg поворот)
+            const icon = createBusMarker(data.route);
+            busMarkers[key].marker.setIcon(icon);
+  
+            // Обновим сохранённый угол
+            busMarkers[key].angle = angle;
           } else {
-            // 🟢 Создать новый маркер
-            const marker = L.marker(latlng, {
-              icon: createBusMarker(data.route, angle)
+            const marker = L.marker(newLatLng, {
+              icon: createBusMarker(data.route)
             }).addTo(map);
-  
             marker.bindPopup("Водитель: " + key + "<br>Маршрут: " + (data.route ?? "—"));
-            busMarkers[key] = marker;
+            busMarkers[key] = { marker, angle };
           }
-  
-          existingKeys.add(key);
-        }
-      });
-  
-      // 🔴 Удаляем маркеры, которых больше нет в базе
-      for (let key in busMarkers) {
-        if (!existingKeys.has(key)) {
-          map.removeLayer(busMarkers[key]);
+        } else if (busMarkers[key]) {
+          map.removeLayer(busMarkers[key].marker);
           delete busMarkers[key];
         }
-      }
+      });
     });
   }
 
