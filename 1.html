@@ -923,7 +923,7 @@
                 <button class="action-btn admin-action" id="addBusBtn">➕ Добавить автобус</button>
             </div>
             
-            <h3><img src="https://i.yapx.ru/Y3Q5z.png" width="20" height="20" style="margin-right: 6px;">Автобусы</h3>
+            <h3><img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="20" height="20" style="margin-right: 6px;">Автобусы</h3>
             <div id="busList" class="bus-list"></div>
         </div>
     </div>
@@ -1113,7 +1113,7 @@
                 busMatches.forEach(bus => {
                     const item = document.createElement('div');
                     item.className = 'search-item';
-                    item.innerHTML = `<img src="https://i.yapx.ru/Y3Q5z.png" width="16" height="16" style="margin-right: 6px;"> ${bus}`;
+                    item.innerHTML = `https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="16" height="16" style="margin-right: 6px;"> ${bus}`;
                     item.onclick = () => {
                         showRouteMap(bus);
                         searchResults.style.display = 'none';
@@ -1186,7 +1186,7 @@
                         <div class="bus-header">
                             <div class="bus-number-container">
                                 <div class="bus-number">
-                                    <img src="https://i.yapx.ru/Y3Q5z.png" alt="Bus" style="width:20px; height:20px;">
+                                    <img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" alt="Bus" style="width:20px; height:20px;">
                                     ${escapeHtml(bus)}
                                 </div>
                             </div>
@@ -1618,7 +1618,7 @@
             
             let scheduleHTML = `
                 <div style="margin-bottom: 10px; text-align: center;">
-                    <center><img src="https://i.yapx.ru/Y3Q5z.png" width="18" height="18">  <strong>Автобус ${busNumber}</strong></center>
+                    <center><img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="18" height="18">  <strong>Автобус ${busNumber}</strong></center>
                     <center>${stopName}</center>
                 </div>
             `;
@@ -1722,7 +1722,7 @@
 
             busWindow.innerHTML = `
                 <div class="container">
-                    <h3 class="full-schedule-title" style="text-align: center;"><img src="https://i.yapx.ru/Y3Q5z.png" width="18" height="18"> Полное расписание автобуса ${escapeHtml(busNumber)}</h3>
+                    <h3 class="full-schedule-title" style="text-align: center;"><img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="18" height="18"> Полное расписание автобуса ${escapeHtml(busNumber)}</h3>
                     ${scheduleHTML}
                     <button class="action-btn" onclick="closeBusWindow('${busNumber}')">Закрыть</button>
                 </div>
@@ -1992,7 +1992,7 @@
                 
                 return `
                     <div class="bus-time-item">
-                        <div class="bus-time-number"><img src="https://i.yapx.ru/Y3Qcq.png" width="18" height="18"> ${escapeHtml(info.busNumber)}</div>
+                        <div class="bus-time-number"><img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="18" height="18"> ${escapeHtml(info.busNumber)}</div>
                         <div class="bus-time-arrival">
                             <span class="bus-time-dot"></span>
                             ${remainingTimeFormatted}
@@ -2006,7 +2006,7 @@
                     <div class="stop-info-title">${escapeHtml(stopName)}</div>
                     <div class="stop-info-subtitle">Транспорт на остановке</div>
                     <div class="bus-numbers-list">
-                        <img src="https://i.yapx.ru/Y3Q5z.png" width="15" height="15">
+                        <img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="15" height="15">
                         ${busNumbersHTML}
                     </div>
                     <div class="bus-time-container">
@@ -2126,7 +2126,7 @@
             
             busWindow.innerHTML = `
                 <div class="container">
-                    <h3><img src="https://i.yapx.ru/Y3Q5z.png" width="18" height="18"> Расписание автобуса ${escapeHtml(busNumber)}</h3>
+                    <h3><img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="18" height="18"> Расписание автобуса ${escapeHtml(busNumber)}</h3>
                     <p>Следующая остановка: <span class="next-stop">${escapeHtml(nextBus.stop)}</span></p>
                     <p>Следующий рейс: ${nextBus.time}</p>
                     <p>Расчетное время: <span class="highlight">${formatRemainingTime(nextBus.remaining)}</span></p>
