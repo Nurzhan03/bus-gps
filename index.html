@@ -229,7 +229,7 @@
       const route = document.getElementById("routeInput").value;
 
       const distanceMoved = prevPosition ? currPos.distanceTo(prevPosition) : Infinity;
-      if (distanceMoved < 1) return; // Игнорируем мелкие скачки < 1 метра
+      if (distanceMoved < 3) return; // Игнорируем шум < 3 метров
 
       let angle = 0;
       if (prevPosition) {
@@ -353,6 +353,11 @@
             animateMarker(busMarkers[key].marker, busMarkers[key].marker.getLatLng(), newLatLng);
   
             // Плавный поворот
+            const angleDiff = Math.abs(((angle - (busMarkers[key].angle ?? 0) + 540) % 360) - 180);
+            if (angleDiff > 5) {
+              animateRotation(busMarkers[key].marker, busMarkers[key].angle ?? 0, angle);
+              busMarkers[key].angle = angle;
+            }
             animateRotation(busMarkers[key].marker, busMarkers[key].angle ?? 0, angle);
   
             // Обновим иконку (но не трогаем bg поворот)
