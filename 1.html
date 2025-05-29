@@ -751,15 +751,15 @@
         
         .bus-time-number {
             font-weight: bold;
-            margin-bottom: 1px;
             font-size:14px ;
-            position: relative;
-            top:3px;
+            display: flex;
+            align-items: center;
+            margin-top: 1px;
         }
         
         .bus-time-arrival {
             font-size: 12px;
-            color: #e7ffe7;
+            color: #a2c93a;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -769,7 +769,7 @@
         .bus-time-dot {
             width: 8px;
             height: 8px;
-            background-color: white;
+            background-color: #a2c93a;
             border-radius: 50%;
             display: inline-block;
         }
@@ -854,8 +854,7 @@
             }
             
             .bus-time-item {
-                min-width: 70px;
-                padding: 8px 15px;
+                min-width: 54px;
             }
         }
     </style>
@@ -1992,7 +1991,7 @@
                 
                 return `
                     <div class="bus-time-item">
-                        <div class="bus-time-number"><img style="position: relative; top: 9px; left: 5px;" src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" width="30" height="30"> ${escapeHtml(info.busNumber)}</div>
+                        <div class="bus-time-number"><img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" width="30" height="30"> ${escapeHtml(info.busNumber)}</div>
                     </div>
                 `;
             }).join("");
@@ -2008,7 +2007,7 @@
                 <div class="bus-time-container">
                   ${busTimesHTML}
                 </div>
-                <div class="bus-time-arrival" style="margin: 12px 0;">
+                <div class="bus-time-arrival" style="margin-top: 6px;">
                   <span class="bus-time-dot"></span>
                   ${
                     arrivalInfo.length > 0
