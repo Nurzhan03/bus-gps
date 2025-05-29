@@ -2005,19 +2005,22 @@
                   <img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="15" height="15">
                   ${busNumbersHTML}
                 </div>
-                <div class="bus-time-arrival">
-                  <span class="bus-time-dot"></span>
-                  ${arrivalInfo.length > 0 ? (arrivalInfo[0].isBoarding
-                    ? `<span class="arriving-text">Прибывает</span>`
-                    : arrivalInfo[0].remainingTime === 1
-                      ? "<1 мин"
-                      : arrivalInfo[0].remainingTime >= 60
-                        ? `${Math.floor(arrivalInfo[0].remainingTime / 60)}ч ${arrivalInfo[0].remainingTime % 60}м`
-                        : `${arrivalInfo[0].remainingTime} мин`)
-                    : "-"}
-                </div>
                 <div class="bus-time-container">
                   ${busTimesHTML}
+                </div>
+                <div class="bus-time-arrival" style="margin: 12px 0;">
+                  <span class="bus-time-dot"></span>
+                  ${
+                    arrivalInfo.length > 0
+                      ? arrivalInfo[0].isBoarding
+                        ? `<span class="arriving-text">Прибывает</span>`
+                        : arrivalInfo[0].remainingTime === 1
+                          ? "&lt;1 мин"
+                          : arrivalInfo[0].remainingTime >= 60
+                            ? `${Math.floor(arrivalInfo[0].remainingTime / 60)}ч ${arrivalInfo[0].remainingTime % 60}м`
+                            : `${arrivalInfo[0].remainingTime} мин`
+                      : "-"
+                  }
                 </div>
                 <div class="action-buttons" style="margin-top: 15px;">
                   <button class="action-button" onclick="showMap('${escapeHtml(stopName)}')">Карта</button>
