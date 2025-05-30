@@ -1967,17 +1967,17 @@
             }
         
             return `
-              <div class="bus-time-item">
-                <div class="bus-time-number">
+              <div class="bus-time-item" style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 12px;">
+                <div class="bus-time-number" style="display: flex; align-items: center;">
                   <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg"
                        width="32" height="32"
-                       style="margin-top: -1px; position: relative; left: 2px;">
+                       style="margin-right: 8px; position: relative; top: -1px;">
                   ${escapeHtml(info.busNumber)}
                 </div>
-              </div>
-              <div class="bus-time-arrival" style="margin-left: 36px; margin-bottom: 12px;">
-                <span class="bus-time-dot"></span>
-                ${remainingTimeFormatted}
+                <div class="bus-time-arrival" style="margin-left: 40px; margin-top: 4px;">
+                  <span class="bus-time-dot"></span>
+                  ${remainingTimeFormatted}
+                </div>
               </div>
             `;
           }).join("");
