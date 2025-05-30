@@ -157,6 +157,7 @@
   const map = L.map('map').setView([50.20232, 81.72463], 16);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap'
+  }).addTo(map);copy; OpenStreetMap'
   }).addTo(map);
 
   function calculateAngle(p1, p2) {
@@ -175,6 +176,10 @@
     iconSize: [32, 32],       // можно изменить под размер иконки
     iconAnchor: [16, 16],     // центр иконки будет в точке
   });
+  stops.forEach(stop => {
+  L.marker([stop.lat, stop.lng], { icon: stopIcon })
+    .addTo(map)
+    .bindPopup(stop.name);
 
   const stops = [
     { lat: 50.19912, lng: 81.72813, name: "п.Октябрьский" },
