@@ -716,14 +716,9 @@
         }
         
         .bus-time-container {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-            scrollbar-width: thin;
-            scrollbar-color: #a2c93a #f0f0f0;
-            flex-direction: column;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
         }
         
         .bus-time-container::-webkit-scrollbar {
@@ -741,32 +736,31 @@
         }
         
         .bus-time-item {
-            background-color: #a2c93a;
-            padding: 0px 0px;
-            border-radius: 20px;
-            color: white;
-            text-align: center;
-            min-width: 80px;
-            flex-shrink: 0;
+          display: flex;
+          flex-direction: column; /* Главное — сделать вертикальную компоновку */
+          align-items: flex-start;
         }
         
         .bus-time-number {
-            font-weight: bold;
-            font-size:14px ;
-            display: flex;
-            align-items: center;
-            margin-top: 1px;
-            padding-right: 8px;
+          font-weight: bold;
+          font-size: 16px;
+          margin-bottom: 4px;
+          display: flex;
+          align-items: center;
+        }
+        
+        .bus-time-number img {
+          margin-right: 6px;
+          position: relative;
+          top: -1px;
         }
         
         .bus-time-arrival {
-            color: #3ac94b;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            margin-left: 1px;
-            margin-top: -7px;
-            font-size: 10px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 14px;
+          color: #555;
         }
         
         .bus-time-dot {
@@ -1971,8 +1965,7 @@
               <div class="bus-time-item">
                 <div class="bus-time-number">
                   <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg"
-                       width="32" height="32"
-                       style="margin-right: 4px; position: relative; top: -1px;">
+                       width="32" height="32">
                   ${escapeHtml(info.busNumber)}
                 </div>
                 <div class="bus-time-arrival">
