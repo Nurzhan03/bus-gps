@@ -1894,117 +1894,135 @@
         }
 
         function showStopInfo(stopName, fromStorage = false) {
-          searchResults.style.display = 'none';
-          stopsListContainer.classList.add('hidden');
-        
-          if (!fromStorage) {
-            currentStop = stopName;
-            localStorage.setItem("currentStop", stopName);
-          }
-        
-          let busesAtStop = [];
-          for (let bus in buses) {
-            if (buses[bus][stopName]) {
-              busesAtStop.push({
-                number: bus,
-                times: buses[bus][stopName]
-              });
-            }
-          }
-        
-          busesAtStop.sort((a, b) => parseInt(a.number) - parseInt(b.number));
-        
-          let now = new Date();
-          let currentTime = now.getHours() * 60 + now.getMinutes();
-        
-          let arrivalInfo = busesAtStop.map(bus => {
-            let times = bus.times.map(time => {
-              let [hours, minutes] = time.split(":").map(Number);
-              return hours * 60 + minutes;
-            }).sort((a, b) => a - b);
-        
-            let nextTime = getNextArrivalTime(bus.times, currentTime);
-            let remainingTime = nextTime - currentTime;
-            if (remainingTime < 0) remainingTime += 1440;
-        
-            let isBoarding = false;
-            for (let time of times) {
-              if (currentTime >= time && currentTime < time + 1) {
-                isBoarding = true;
-                remainingTime = 0;
-                break;
-              }
-            }
-        
-            return {
-              busNumber: bus.number,
-              remainingTime: remainingTime,
-              isBoarding: isBoarding,
-              nextTime: nextTime
-            };
-          });
-        
-          arrivalInfo.sort((a, b) => {
-            if (a.isBoarding && !b.isBoarding) return -1;
-            if (!a.isBoarding && b.isBoarding) return 1;
-            return a.remainingTime - b.remainingTime;
-          });
-        
-          let busNumbersHTML = busesAtStop.map(bus => bus.number).join(', ');
-        
-            let busTimesHTML = arrivalInfo.map(info => {
-              let remainingTimeFormatted;
-              if (info.isBoarding) {
-                remainingTimeFormatted = `<span class="arriving-text">Прибывает</span>`;
-              } else if (info.remainingTime === 1) {
-                remainingTimeFormatted = "<1 мин";
-              } else if (info.remainingTime >= 60) {
-                let hours = Math.floor(info.remainingTime / 60);
-                let mins = info.remainingTime % 60;
-                remainingTimeFormatted = `${hours}ч ${mins}м`;
-              } else {
-                remainingTimeFormatted = `${info.remainingTime} мин`;
-              }
+            searchResults.style.display = 'none';
+            stopsListContainer.classList.add('hidden'); // Скрываем список остановок при открытии информации
             
-            return `
-              <div class="bus-time-item">
-                <div class="bus-time-number">
-                  <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg"
-                       width="32" height="32"
-                       style="margin-right: 4px; position: relative; top: -1px;">
-                  ${escapeHtml(info.busNumber)}
+            // Сохраняем текущую остановку
+            if (!fromStorage) {
+                currentStop = stopName;
+                localStorage.setItem("currentStop", stopName);
+            }
+            
+            // Найдем все автобусы, которые останавливаются на этой остановке
+            let busesAtStop = [];
+            for (let bus in buses) {
+                if (buses[bus][stopName]) {
+                    busesAtStop.push({
+                        number: bus,
+                        times: buses[bus][stopName]
+                    });
+                }
+            }
+            
+            // Сортируем автобусы по номеру (по возрастанию)
+            busesAtStop.sort((a, b) => parseInt(a.number) - parseInt(b.number));
+            
+            // Получим ближайшее время для каждого автобуса
+            let now = new Date();
+            let currentTime = now.getHours() * 60 + now.getMinutes();
+            
+            // Создаем массив для информации о прибытии автобусов
+            let arrivalInfo = busesAtStop.map(bus => {
+                let times = bus.times.map(time => {
+                    let [hours, minutes] = time.split(":").map(Number);
+                    return hours * 60 + minutes;
+                }).sort((a, b) => a - b);
+                
+                // Находим ближайшее время
+                let nextTime = getNextArrivalTime(bus.times, currentTime);
+                let remainingTime = nextTime - currentTime;
+                if (remainingTime < 0) remainingTime += 1440;
+                
+                let isBoarding = false;
+                for (let time of times) {
+                    if (currentTime >= time && currentTime < time + 1) {
+                        isBoarding = true;
+                        remainingTime = 0;
+                        break;
+                    }
+                }
+                
+                return {
+                    busNumber: bus.number,
+                    remainingTime: remainingTime,
+                    isBoarding: isBoarding,
+                    nextTime: nextTime
+                };
+            });
+            
+            // Сортируем по времени прибытия (сначала те, что прибывают, затем по времени)
+            arrivalInfo.sort((a, b) => {
+                // Если один из автобусов находится в статусе "Прибывает", он должен быть первым
+                if (a.isBoarding && !b.isBoarding) return -1;
+                if (!a.isBoarding && b.isBoarding) return 1;
+                
+                // Иначе сортируем по времени до прибытия
+                return a.remainingTime - b.remainingTime;
+            });
+            
+            // Создаем HTML для номеров автобусов (сортировка по номеру)
+            let busNumbersHTML = busesAtStop.map(bus => bus.number).join(', ');
+            
+            // Создаем HTML для времени прибытия автобусов (сортировка по времени)
+            let busTimesHTML = arrivalInfo.map(info => {
+                let remainingTimeFormatted;
+                if (info.isBoarding) {
+                    remainingTimeFormatted = `<span class="arriving-text">Прибывает</span>`;
+                } else if (info.remainingTime === 1) {
+                    remainingTimeFormatted = "<1 мин";
+                } else if (info.remainingTime >= 60) {
+                    let hours = Math.floor(info.remainingTime / 60);
+                    let mins = info.remainingTime % 60;
+                    remainingTimeFormatted = `${hours}ч ${mins}м`;
+                } else {
+                    remainingTimeFormatted = `${info.remainingTime} мин`;
+                }
+                
+                return `
+                    <div class="bus-time-item">
+                        <div class="bus-time-number"><img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" width="32" height="32" style="margin-top: -1px; position: relative; left: 2px;"> ${escapeHtml(info.busNumber)}</div>
+                    </div>
+                `;
+            }).join("");
+            
+            stopInfoWindow.innerHTML = `
+              <div class="stop-info-window">
+                <div class="stop-info-title">${escapeHtml(stopName)}</div>
+                <div class="stop-info-subtitle">Транспорт на остановке</div>
+                <div class="bus-numbers-list">
+                  <img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="15" height="15" style="margin-top: -1px">
+                  ${busNumbersHTML}
+                </div>
+                <div class="bus-time-container">
+                  ${busTimesHTML}
                 </div>
                 <div class="bus-time-arrival">
                   <span class="bus-time-dot"></span>
-                  ${remainingTimeFormatted}
+                  ${
+                    arrivalInfo.length > 0
+                      ? arrivalInfo[0].isBoarding
+                        ? `<span class="arriving-text">Прибывает</span>`
+                        : arrivalInfo[0].remainingTime === 1
+                          ? "&lt;1 мин"
+                          : arrivalInfo[0].remainingTime >= 60
+                            ? `${Math.floor(arrivalInfo[0].remainingTime / 60)}ч ${arrivalInfo[0].remainingTime % 60}м`
+                            : `${arrivalInfo[0].remainingTime} мин`
+                      : "-"
+                  }
                 </div>
+                <div class="action-buttons" style="margin-top: 15px;">
+                  <button class="action-button" onclick="showMap('${escapeHtml(stopName)}')">Карта</button>
+                  <button class="action-button" onclick="showStopSchedule('${escapeHtml(stopName)}')">Расписание</button>
+                  <button class="action-button" onclick="addToFavorites('${escapeHtml(stopName)}')">Избранное</button>
+                  <button class="action-button" onclick="showRouteFromStop('${escapeHtml(stopName)}')">Маршрут</button>
+                </div>
+                <button class="action-btn" onclick="closeStopWindow()" style="margin-top: 12px; width: 100%; padding: 8px; font-size: 14px;">Закрыть</button>
               </div>
             `;
-        
-          stopInfoWindow.innerHTML = `
-            <div class="stop-info-window">
-              <div class="stop-info-title">${escapeHtml(stopName)}</div>
-              <div class="stop-info-subtitle">Транспорт на остановке</div>
-              <div class="bus-numbers-list">
-                <img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg"
-                     width="15" height="15" style="margin-top: -1px">
-                ${busNumbersHTML}
-              </div>
-              <div class="bus-time-container">
-                ${busTimesHTML}
-              </div>
-              <div class="action-buttons" style="margin-top: 15px;">
-                <button class="action-button" onclick="showMap('${escapeHtml(stopName)}')">Карта</button>
-                <button class="action-button" onclick="showStopSchedule('${escapeHtml(stopName)}')">Расписание</button>
-                <button class="action-button" onclick="addToFavorites('${escapeHtml(stopName)}')">Избранное</button>
-                <button class="action-button" onclick="showRouteFromStop('${escapeHtml(stopName)}')">Маршрут</button>
-              </div>
-              <button class="action-btn" onclick="closeStopWindow()"
-                      style="margin-top: 12px; width: 100%; padding: 8px; font-size: 14px;">Закрыть</button>
-            </div>
-          `;
-          stopInfoWindow.style.display = 'block';
-          stopInfoWindow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            stopInfoWindow.style.display = 'block';
+            
+            // Прокручиваем к окну с информацией
+            stopInfoWindow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         
         // Вспомогательная функция для получения ближайшего времени прибытия
