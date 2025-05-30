@@ -1952,34 +1952,35 @@
         
           let busNumbersHTML = busesAtStop.map(bus => bus.number).join(', ');
         
-            let busTimesHTML = arrivalInfo.map(info => {
-              let remainingTimeFormatted;
-              if (info.isBoarding) {
-                remainingTimeFormatted = `<span class="arriving-text">Прибывает</span>`;
-              } else if (info.remainingTime === 1) {
-                remainingTimeFormatted = "<1 мин";
-              } else if (info.remainingTime >= 60) {
-                let hours = Math.floor(info.remainingTime / 60);
-                let mins = info.remainingTime % 60;
-                remainingTimeFormatted = `${hours}ч ${mins}м`;
-              } else {
-                remainingTimeFormatted = `${info.remainingTime} мин`;
-              }
-            
+          let busTimesHTML = arrivalInfo.map(info => {
+            let remainingTimeFormatted;
+            if (info.isBoarding) {
+              remainingTimeFormatted = `<span class="arriving-text">Прибывает</span>`;
+            } else if (info.remainingTime === 1) {
+              remainingTimeFormatted = "<1 мин";
+            } else if (info.remainingTime >= 60) {
+              let hours = Math.floor(info.remainingTime / 60);
+              let mins = info.remainingTime % 60;
+              remainingTimeFormatted = `${hours}ч ${mins}м`;
+            } else {
+              remainingTimeFormatted = `${info.remainingTime} мин`;
+            }
+        
             return `
               <div class="bus-time-item">
                 <div class="bus-time-number">
                   <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg"
                        width="32" height="32"
-                       style="margin-right: 4px; position: relative; top: -1px;">
+                       style="margin-top: -1px; position: relative; left: 2px;">
                   ${escapeHtml(info.busNumber)}
                 </div>
-                <div class="bus-time-arrival">
-                  <span class="bus-time-dot"></span>
-                  ${remainingTimeFormatted}
-                </div>
+              </div>
+              <div class="bus-time-arrival" style="margin-left: 36px; margin-bottom: 12px;">
+                <span class="bus-time-dot"></span>
+                ${remainingTimeFormatted}
               </div>
             `;
+          }).join("");
         
           stopInfoWindow.innerHTML = `
             <div class="stop-info-window">
