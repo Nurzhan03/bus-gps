@@ -1979,7 +1979,7 @@
                 
                 return `
                     <div class="bus-time-item">
-                        <div class="bus-time-number"><img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" width="30" height="30"> ${escapeHtml(info.busNumber)}</div>
+                        <div class="bus-time-number"><img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" width="32" height="32" style="margin-top: -1px; position: relative; left: 2px;"> ${escapeHtml(info.busNumber)}</div>
                     </div>
                 `;
             }).join("");
@@ -1989,13 +1989,13 @@
                 <div class="stop-info-title">${escapeHtml(stopName)}</div>
                 <div class="stop-info-subtitle">Транспорт на остановке</div>
                 <div class="bus-numbers-list">
-                  <img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="15" height="15">
+                  <img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="15" height="15" style="margin-top: -1px">
                   ${busNumbersHTML}
                 </div>
                 <div class="bus-time-container">
                   ${busTimesHTML}
                 </div>
-                <div class="bus-time-arrival" style="margin-top: 6px;">
+                <div class="bus-time-arrival">
                   <span class="bus-time-dot"></span>
                   ${
                     arrivalInfo.length > 0
