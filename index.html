@@ -170,11 +170,12 @@
 
     return (brng + 360) % 360;
   }
- const stopIcon = L.icon({
+  const stopIcon = L.icon({
     iconUrl: "https://oskemenbus.kz/assets/images/map-icons/stop-icons/city_transport_stop.svg",
     iconSize: [32, 32],       // можно изменить под размер иконки
     iconAnchor: [16, 16],     // центр иконки будет в точке
   });
+
   const stops = [
     { lat: 50.19912, lng: 81.72813, name: "п.Октябрьский" },
     { lat: 50.19899, lng: 81.72786, name: "п.Октябрьский" },
