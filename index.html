@@ -175,11 +175,11 @@
     iconSize: [32, 32],       // можно изменить под размер иконки
     iconAnchor: [16, 16],     // центр иконки будет в точке
   });
-  stops.forEach(stop => {
+stops.forEach(stop => {
   L.marker([stop.lat, stop.lng], { icon: stopIcon })
     .addTo(map)
     .bindPopup(stop.name);
-
+});
   const stops = [
     { lat: 50.19912, lng: 81.72813, name: "п.Октябрьский" },
     { lat: 50.19899, lng: 81.72786, name: "п.Октябрьский" },
