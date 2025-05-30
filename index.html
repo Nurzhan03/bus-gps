@@ -191,6 +191,53 @@
     });
   }
 
+  function updateRouteText(marker, route) {
+    const textSpan = marker.getElement().querySelector('.vehicle-marker__text span');
+    if (textSpan) textSpan.textContent = route ?? '';
+  }
+
+  function animateMarker(marker, fromLatLng, toLatLng, duration = 1000) {
+    const startTime = performance.now();
+
+    function animate(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      const lat = fromLatLng.lat + (toLatLng.lat - fromLatLng.lat) * progress;
+      const lng = fromLatLng.lng + (toLatLng.lng - fromLatLng.lng) * progress;
+      marker.setLatLng([lat, lng]);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  function animateRotation(marker, fromAngle, toAngle, duration = 500) {
+    const bgImg = marker.getElement().querySelector('img[alt="bg"]');
+    if (!bgImg) return;
+
+    const startTime = performance.now();
+
+    function animate(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      const delta = ((((toAngle - fromAngle + 540) % 360) - 180) + 360) % 360;
+      const currentAngle = (fromAngle + delta * progress) % 360;
+
+      bgImg.style.transform = `rotate(${(currentAngle + 180) % 360}deg)`;
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+
   function login() {
     const pin = document.getElementById("pinInput").value;
     db.ref("drivers").orderByChild("pin").equalTo(pin).once("value", snap => {
@@ -202,17 +249,15 @@
         document.getElementById("loginPanel").style.display = "none";
         document.getElementById("driverPanel").style.display = "block";
 
-        document.getElementById("routeInput").value = driverData.route ?? "";
+        document.getElementById("routeInput").value = driverData.route ?? '';
         const changeBtn = document.querySelector('button[onclick="changeRoute()"]');
-        if (driverData.route) changeBtn.style.display = "inline-block";
-        else changeBtn.style.display = "none";
+        changeBtn.style.display = driverData.route ? "inline-block" : "none";
 
         if (driverData.latitude && driverData.longitude) {
           document.getElementById("startStopBtn").innerText = "Завершить смену";
 
           if (!navigator.geolocation) return alert("Геолокация не поддерживается");
           prevPosition = L.latLng(driverData.latitude, driverData.longitude);
-
           startTracking();
         } else {
           document.getElementById("startStopBtn").innerText = "Начать смену";
@@ -229,7 +274,7 @@
       const route = document.getElementById("routeInput").value;
 
       const distanceMoved = prevPosition ? currPos.distanceTo(prevPosition) : Infinity;
-      if (distanceMoved < 3) return; // Игнорируем шум < 3 метров
+      if (distanceMoved < 3) return; // Игнорируем шум < 3 м
 
       let angle = 0;
       if (prevPosition) {
@@ -284,7 +329,7 @@
       document.getElementById("changeRouteBtn").style.display = "none";
 
       if (busMarkers[currentDriver]) {
-        map.removeLayer(busMarkers[currentDriver]);
+        map.removeLayer(busMarkers[currentDriver].marker);
         delete busMarkers[currentDriver];
       }
     }
@@ -295,80 +340,36 @@
     db.ref("drivers/" + currentDriver).update({ route });
   }
 
-  function animateMarker(marker, fromLatLng, toLatLng, duration = 1000) {
-    const startTime = performance.now();
-
-    function animate(currentTime) {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-  
-      const lat = fromLatLng.lat + (toLatLng.lat - fromLatLng.lat) * progress;
-      const lng = fromLatLng.lng + (toLatLng.lng - fromLatLng.lng) * progress;
-      marker.setLatLng([lat, lng]);
-  
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    }
-
-    requestAnimationFrame(animate);
-  }
-
-  function animateRotation(marker, fromAngle, toAngle, duration = 500) {
-    const bgImg = marker.getElement().querySelector('img[alt="bg"]');
-    if (!bgImg) return;
-  
-    const startTime = performance.now();
-  
-    function animate(currentTime) {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-  
-      // интерполяция угла
-      const delta = ((((toAngle - fromAngle + 540) % 360) - 180) + 360) % 360;
-      const currentAngle = (fromAngle + delta * progress) % 360;
-  
-      bgImg.style.transform = `rotate(${(currentAngle + 180) % 360}deg)`;
-  
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    }
-  
-    requestAnimationFrame(animate);
-  }
-  
   function updateMarkers() {
     db.ref("drivers").once("value", snap => {
       snap.forEach(child => {
         const key = child.key;
         const data = child.val();
-  
+
         if (data.latitude && data.longitude) {
           const newLatLng = L.latLng(data.latitude, data.longitude);
           const angle = data.angle ?? 0;
-  
+
           if (busMarkers[key]) {
-            // Плавное перемещение
-            animateMarker(busMarkers[key].marker, busMarkers[key].marker.getLatLng(), newLatLng);
-  
-            // Плавный поворот
-            const angleDiff = Math.abs(((angle - (busMarkers[key].angle ?? 0) + 540) % 360) - 180);
+            const markerObj = busMarkers[key];
+            const marker = markerObj.marker;
+            const oldAngle = markerObj.angle ?? 0;
+
+            // Плавное движение
+            animateMarker(marker, marker.getLatLng(), newLatLng);
+
+            // Плавный поворот, если угол изменился значительно
+            const angleDiff = Math.abs((((angle - oldAngle + 540) % 360) - 180));
             if (angleDiff > 5) {
-              animateRotation(busMarkers[key].marker, busMarkers[key].angle ?? 0, angle);
-              busMarkers[key].angle = angle;
+              animateRotation(marker, oldAngle, angle);
+              markerObj.angle = angle;
             }
-            animateRotation(busMarkers[key].marker, busMarkers[key].angle ?? 0, angle);
-  
-            // Обновим иконку (но не трогаем bg поворот)
-            const icon = createBusMarker(data.route);
-            busMarkers[key].marker.setIcon(icon);
-  
-            // Обновим сохранённый угол
-            busMarkers[key].angle = angle;
+
+            // Обновить текст маршрута
+            updateRouteText(marker, data.route);
           } else {
             const marker = L.marker(newLatLng, {
-              icon: createBusMarker(data.route)
+              icon: createBusMarker(data.route, angle)
             }).addTo(map);
             marker.bindPopup("Водитель: " + key + "<br>Маршрут: " + (data.route ?? "—"));
             busMarkers[key] = { marker, angle };
