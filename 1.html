@@ -716,9 +716,13 @@
         }
         
         .bus-time-container {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: #a2c93a #f0f0f0;
         }
         
         .bus-time-container::-webkit-scrollbar {
@@ -736,31 +740,32 @@
         }
         
         .bus-time-item {
-          display: flex;
-          flex-direction: column; /* Главное — сделать вертикальную компоновку */
-          align-items: flex-start;
+            background-color: #a2c93a;
+            padding: 0px 0px;
+            border-radius: 20px;
+            color: white;
+            text-align: center;
+            min-width: 80px;
+            flex-shrink: 0;
         }
         
         .bus-time-number {
-          font-weight: bold;
-          font-size: 16px;
-          margin-bottom: 4px;
-          display: flex;
-          align-items: center;
-        }
-        
-        .bus-time-number img {
-          margin-right: 6px;
-          position: relative;
-          top: -1px;
+            font-weight: bold;
+            font-size:14px ;
+            display: flex;
+            align-items: center;
+            margin-top: 1px;
+            padding-right: 8px;
         }
         
         .bus-time-arrival {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 14px;
-          color: #555;
+            color: #3ac94b;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 1px;
+            margin-top: -7px;
+            font-size: 10px;
         }
         
         .bus-time-dot {
@@ -1947,25 +1952,26 @@
         
           let busNumbersHTML = busesAtStop.map(bus => bus.number).join(', ');
         
-          let busTimesHTML = arrivalInfo.map(info => {
-            let remainingTimeFormatted;
-            if (info.isBoarding) {
-              remainingTimeFormatted = `<span class="arriving-text">Прибывает</span>`;
-            } else if (info.remainingTime === 1) {
-              remainingTimeFormatted = "<1 мин";
-            } else if (info.remainingTime >= 60) {
-              let hours = Math.floor(info.remainingTime / 60);
-              let mins = info.remainingTime % 60;
-              remainingTimeFormatted = `${hours}ч ${mins}м`;
-            } else {
-              remainingTimeFormatted = `${info.remainingTime} мин`;
-            }
-        
+            let busTimesHTML = arrivalInfo.map(info => {
+              let remainingTimeFormatted;
+              if (info.isBoarding) {
+                remainingTimeFormatted = `<span class="arriving-text">Прибывает</span>`;
+              } else if (info.remainingTime === 1) {
+                remainingTimeFormatted = "<1 мин";
+              } else if (info.remainingTime >= 60) {
+                let hours = Math.floor(info.remainingTime / 60);
+                let mins = info.remainingTime % 60;
+                remainingTimeFormatted = `${hours}ч ${mins}м`;
+              } else {
+                remainingTimeFormatted = `${info.remainingTime} мин`;
+              }
+            
             return `
               <div class="bus-time-item">
                 <div class="bus-time-number">
                   <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg"
-                       width="32" height="32">
+                       width="32" height="32"
+                       style="margin-right: 4px; position: relative; top: -1px;">
                   ${escapeHtml(info.busNumber)}
                 </div>
                 <div class="bus-time-arrival">
@@ -1974,7 +1980,6 @@
                 </div>
               </div>
             `;
-          }).join("");
         
           stopInfoWindow.innerHTML = `
             <div class="stop-info-window">
