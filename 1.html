@@ -782,11 +782,8 @@
             font-weight: bold;
         }
 
-        .bus-time-block {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          margin-bottom: 10px;
+        .bus-time-block.shift-left {
+          margin-left: 8px;
         }
         
         /* Медиа-запросы для мобильных устройств */
@@ -1980,9 +1977,11 @@
                 } else {
                     remainingTimeFormatted = `${info.remainingTime} мин`;
                 }
+
+                const blockClass = info.isBoarding ? "bus-time-block shift-left" : "bus-time-block";
             
                 return `
-                  <div class="bus-time-block" style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px;">
+                  <div class="${blockClass}">
                     <div class="bus-time-item">
                       <div class="bus-time-number">
                         <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" width="32" height="32" style="margin-top: -1px; position: relative; left: 2px;">
