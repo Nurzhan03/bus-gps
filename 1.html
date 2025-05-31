@@ -788,6 +788,10 @@
           align-items: flex-start;
           margin-bottom: 10px;
         }
+
+        .bus-time-block.shift-left {
+          margin-left: 10px;
+        }
         
         /* Медиа-запросы для мобильных устройств */
         @media (max-width: 480px) {
@@ -1972,33 +1976,36 @@
             
             // Создаем HTML для времени прибытия автобусов (сортировка по времени)
             let busTimesHTML = arrivalInfo.map(info => {
-                let remainingTimeFormatted;
-                if (info.isBoarding) {
-                    remainingTimeFormatted = `<span class="arriving-text">Прибывает</span>`;
-                } else if (info.remainingTime === 1) {
-                    remainingTimeFormatted = "&lt;1 мин";
-                } else if (info.remainingTime >= 60) {
-                    let hours = Math.floor(info.remainingTime / 60);
-                    let mins = info.remainingTime % 60;
-                    remainingTimeFormatted = `${hours}ч ${mins}м`;
-                } else {
-                    remainingTimeFormatted = `${info.remainingTime} мин`;
-                }
+              let remainingTimeFormatted;
+              if (info.isBoarding) {
+                remainingTimeFormatted = `<span class="arriving-text">Прибывает</span>`;
+              } else if (info.remainingTime === 1) {
+                remainingTimeFormatted = "&lt;1 мин";
+              } else if (info.remainingTime >= 60) {
+                let hours = Math.floor(info.remainingTime / 60);
+                let mins = info.remainingTime % 60;
+                remainingTimeFormatted = `${hours}ч ${mins}м`;
+              } else {
+                remainingTimeFormatted = `${info.remainingTime} мин`;
+              }
             
-                return `
-                  <div class="bus-time-block" style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px;">
-                    <div class="bus-time-item">
-                      <div class="bus-time-number">
-                        <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" width="32" height="32" style="margin-top: -1px; position: relative; left: 2px;">
-                        ${escapeHtml(info.busNumber)}
-                      </div>
-                    </div>
-                    <div class="bus-time-arrival" style="margin-top: 2px;">
-                      <span class="bus-time-dot"></span>
-                      ${remainingTimeFormatted}
+              // Если прибывает — добавим класс shift-left
+              const blockClass = info.isBoarding ? "bus-time-block shift-left" : "bus-time-block";
+            
+              return `
+                <div class="${blockClass}">
+                  <div class="bus-time-item">
+                    <div class="bus-time-number">
+                      <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" width="32" height="32" style="margin-top: -1px; position: relative; left: 2px;">
+                      ${escapeHtml(info.busNumber)}
                     </div>
                   </div>
-                `;
+                  <div class="bus-time-arrival">
+                    <span class="bus-time-dot"></span>
+                    ${remainingTimeFormatted}
+                  </div>
+                </div>
+              `;
             }).join("");
             
             stopInfoWindow.innerHTML = `
