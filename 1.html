@@ -1986,16 +1986,16 @@
                 }
 
                 let shL = "bus-time-item";
-                let zMR = `style="margin-left: 0px"`;
+                let zML = `style="margin-left: 0px"`;
 
                 if (info.isBoarding) {
                     shL = "bus-time-item shift-left";
-                    zmR = "";
+                    zML = "";
                 }
             
                 return `
                   <div class="bus-time-block">
-                    <div class="${shL}" ${zMR}>
+                    <div class="${shL}" ${zML}>
                       <div class="bus-time-number">
                         <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" width="32" height="32" style="margin-top: -1px; position: relative; left: 2px;">
                         ${escapeHtml(info.busNumber)}
