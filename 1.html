@@ -1985,11 +1985,16 @@
                     remainingTimeFormatted = `${info.remainingTime} мин`;
                 }
 
-                const blockClass = info.isBoarding ? "bus-time-block shift-left" : "bus-time-block";
+                if (info.isBoarding) {
+                    const shL = 'bus-time-item shift-left';
+                } else {
+                    const shL = 'bus-time-item';
+                    const zMR = 'style="margin-left: 0px"';
+                }
             
                 return `
-                  <div class="${blockClass}">
-                    <div class="bus-time-item">
+                  <div class="bus-time-block">
+                    <div class="${shL}" ${zMR}>
                       <div class="bus-time-number">
                         <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" width="32" height="32" style="margin-top: -1px; position: relative; left: 2px;">
                         ${escapeHtml(info.busNumber)}
