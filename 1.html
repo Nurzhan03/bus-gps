@@ -1985,11 +1985,12 @@
                     remainingTimeFormatted = `${info.remainingTime} мин`;
                 }
 
+                let shL = "bus-time-item";
+                let zMR = `style="margin-left: 0px"`;
+
                 if (info.isBoarding) {
-                    const shL = "bus-time-item shift-left";
-                } else {
-                    const shL = "bus-time-item";
-                    const zMR = `style="margin-left: 0px"`;
+                    shL = "bus-time-item shift-left";
+                    zmR = "";
                 }
             
                 return `
