@@ -619,14 +619,6 @@
             background: #c0392b;
         }
         
-        /* Стили для кнопки GPS */
-        .gps-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
-        
         /* Новые стили для календарика и расписания */
         .calendar-icon {
             width: 16px;
@@ -894,10 +886,8 @@
                 <iframe class="google-map-container" src="https://www.google.com/maps/d/u/0/embed?mid=1Hkdu4NCMJT7F6vjyQJ7cXEsxMuARRhU&ehbc=2E312F&hl=ru&ui=0&zoom=1"></iframe>
             </div>
             
-            <!-- Кнопка для открытия списка остановок -->
-            <button class="mode-btn" id="showStopsBtn" style="margin-top: 10px; background-color: #9b59b6; color: white;">Показать все остановки
-                
-            </button>
+            <button class="mode-btn" id="showStopsBtn" style="margin-top: 10px; background-color: #9b59b6; color: white;">Показать все остановки</button>
+            <button class="mode-btn" style="margin-top: 10px; background-color: #9b59b6; color: white;">Показать на карте</button>
             
             <!-- Контейнер для списка остановок -->
             <div id="stopsListContainer" class="hidden" style="margin-top: 15px;">
@@ -1189,9 +1179,6 @@
                                 <button class="action-btn" onclick="showRouteMap('${bus}')">Маршрут</button>
                                 <button class="action-btn" onclick="showSchedule('${bus}')">Расписание</button>
                                 <button class="action-btn" onclick="showFullSchedule('${bus}')">Полное расписание</button>
-                                <button class="action-btn gps-btn" onclick="showBusOnMap('${bus}')">
-                                    Показать на карте 
-                                </button>
                             </div>
                         </div>
                     </div>
