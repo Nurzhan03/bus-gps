@@ -1104,6 +1104,8 @@
                     item.innerHTML = `<img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="16" height="16" style="margin-right: 6px;"> ${bus}`;
                     item.onclick = () => {
                         showRouteMap(bus);
+                        document.getElementById(`bus-window-${bus}`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        
                         searchResults.style.display = 'none';
                     };
                     searchResults.appendChild(item);
