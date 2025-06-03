@@ -1104,7 +1104,7 @@
                 busMatches.forEach(bus => {
                     const item = document.createElement('div');
                     item.className = 'search-item';
-                    item.innerHTML = `https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="16" height="16" style="margin-right: 6px;"> ${bus}`;
+                    item.innerHTML = `<img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="16" height="16" style="margin-right: 6px;"> ${bus}`;
                     item.onclick = () => {
                         showRouteMap(bus);
                         searchResults.style.display = 'none';
