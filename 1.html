@@ -768,15 +768,6 @@
             font-size: 10px;
         }
         
-        .bus-time-dot {
-            width: 5px;
-            height: 5px;
-            background-color: #3ac94b;
-            border-radius: 50%;
-            display: inline-block;
-            margin-left: 3px;
-        }
-        
         .arriving-text {
             color: #3ac94b;
             font-weight: bold;
@@ -785,7 +776,7 @@
         .bus-time-block {
           display: flex;
           flex-direction: column;
-          align-items: flex-start;
+          align-items: center;
           margin-bottom: 10px;
         }
 
@@ -2002,7 +1993,7 @@
                       </div>
                     </div>
                     <div class="bus-time-arrival">
-                      <span class="bus-time-dot"></span>
+                      &#9679;
                       ${remainingTimeFormatted}
                     </div>
                   </div>
