@@ -741,11 +741,9 @@
         
         .bus-time-item {
             background-color: #a2c93a;
-            padding: 0px 0px;
             border-radius: 20px;
             color: white;
             text-align: center;
-            min-width: 54px;
             flex-shrink: 0;
         }
         
@@ -760,12 +758,9 @@
         
         .bus-time-arrival {
             color: #3ac94b;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            margin-left: 1px;
             margin-top: 2px;
             font-size: 10px;
+            text-align: center;
         }
         
         .arriving-text {
@@ -776,12 +771,7 @@
         .bus-time-block {
           display: flex;
           flex-direction: column;
-          align-items: center;
-          margin-bottom: 10px;
-        }
-
-        .bus-time-item.shift-left {
-          margin-left: 8px;
+          margin-bottom: 5px;
         }
         
         /* Медиа-запросы для мобильных устройств */
@@ -1975,18 +1965,10 @@
                 } else {
                     remainingTimeFormatted = `${info.remainingTime} мин`;
                 }
-
-                let shL = "bus-time-item";
-                let zML = `style="margin-left: 0px"`;
-
-                if (info.isBoarding) {
-                    shL = "bus-time-item shift-left";
-                    zML = "";
-                }
             
                 return `
                   <div class="bus-time-block">
-                    <div class="${shL}" ${zML}>
+                    <div class="bus-time-item">
                       <div class="bus-time-number">
                         <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" width="32" height="32" style="margin-top: -1px; position: relative; left: 2px;">
                         ${escapeHtml(info.busNumber)}
