@@ -883,10 +883,9 @@
         <div class="app-content">
             <div class="search-container">
                 <div class="search-input-container">
-                    <input id="searchInput" class="search-input" type="text" placeholder="Поиск остановки или номера автобуса">
+                    <input id="searchInput" class="search-input" type="text" placeholder="Поиск остановки или автобуса">
                     <div id="searchResults" class="search-results"></div>
                 </div>
-                <button class="search-button" id="searchBtn">Найти</button>
             </div>
             
             <!-- Контейнер для карты -->
@@ -944,7 +943,6 @@
         const adminPanel = document.getElementById('adminPanel');
         const searchInput = document.getElementById('searchInput');
         const searchResults = document.getElementById('searchResults');
-        const searchBtn = document.getElementById('searchBtn');
         const busNumberInput = document.getElementById('busNumber');
         const addBusBtn = document.getElementById('addBusBtn');
         const busList = document.getElementById('busList');
@@ -963,7 +961,6 @@
             loginBtn.addEventListener('click', checkAdminPassword);
             
             // Обработчики событий для основного приложения
-            searchBtn.addEventListener('click', performSearch);
             searchInput.addEventListener('input', handleSearchInput);
             addBusBtn.addEventListener('click', addBus);
             modeSwitchBtn.addEventListener('click', switchMode);
