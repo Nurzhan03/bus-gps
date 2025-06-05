@@ -1480,10 +1480,14 @@
                     }
                     return `${time} мин`;
                 }).join(', ');
+
+                function escapeForAttribute(value) {
+                    return value.replace(/"/g, '\\"');  // Экранируем только для атрибутов
+                }
                 
                 let stopHTML = `
                     <div class="stop" id="stop-${busNumber}-${index}">
-                        <div class="stop-header" onclick="showStopInfo('${escapeHtml(stop)}');stopInfoWindow.scrollIntoView({ behavior: 'smooth', block: 'nearest' })">
+                        <div class="stop-header" onclick="showStopInfo('${escapeForAttribute(stop)}');stopInfoWindow.scrollIntoView({ behavior: 'smooth', block: 'nearest' })">
                             <div class="circle"></div>
                             <div>
                                 <div class="${stop === firstStop || stop === lastStop ? 'bold' : ''}">
@@ -1493,10 +1497,10 @@
                             </div>
                             <div class="arrow-right">
                                 <img src="https://cdn-icons-png.flaticon.com/512/3652/3652191.png" class="calendar-icon" 
-                                     onclick="event.stopPropagation(); showFullScheduleForStop('${busNumber}', '${escapeHtml(stop)}', event)">
+                                     onclick="event.stopPropagation(); showFullScheduleForStop('${busNumber}', '${escapeForAttribute(stop)}', event)">
                             </div>
                         </div>
-                        <div class="full-schedule-container" id="schedule-${busNumber}-${escapeHtml(stop)}"></div>
+                        <div class="full-schedule-container" id="schedule-${busNumber}-${escapeForAttribute(stop)}"></div>
                     </div>
                 `;
                 return stopHTML;
