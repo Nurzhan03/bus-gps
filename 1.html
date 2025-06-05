@@ -1188,29 +1188,6 @@
             }
         }
 
-        // Достаем данные из localStorage
-const busesData = localStorage.getItem('buses');
-
-// Проверяем, есть ли данные
-if (busesData) {
-    // Преобразуем данные из JSON в объект (если это строка JSON)
-    const buses = JSON.parse(busesData);
-    
-    // Показываем данные на экране
-    const displayArea = document.createElement('div');
-    displayArea.style.padding = '20px';
-    displayArea.style.border = '1px solid #ccc';
-    displayArea.style.marginTop = '10px';
-    displayArea.innerHTML = `<pre>${JSON.stringify(buses, null, 2)}</pre>`; // форматированный вывод данных
-
-    // Добавляем блок с данными в body
-    document.body.appendChild(displayArea);
-} else {
-    // Если данных нет, показываем сообщение
-    alert('Нет данных в localStorage для ключа "buses"');
-}
-
-
         // Функция для показа автобуса на карте
         function showBusOnMap(busNumber) {
             // Показываем контейнер карты
