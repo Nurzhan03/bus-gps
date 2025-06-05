@@ -1480,8 +1480,6 @@
                     }
                     return `${time} мин`;
                 }).join(', ');
-
-                stop = stop.replace(/"/g, '&quot;');
                 
                 let stopHTML = `
                     <div class="stop" id="stop-${busNumber}-${index}">
