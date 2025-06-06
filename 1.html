@@ -1164,7 +1164,6 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/'/g, "&#039;");
-                // Убрали замену кавычек, чтобы они отображались нормально
         }
         
         function setupSearch() {
@@ -1528,7 +1527,7 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                 
                 let stopHTML = `
                     <div class="stop" id="stop-${busNumber}-${index}">
-                        <div class="stop-header" onclick="showStopInfo('${escapeForAttribute(stop)}');stopInfoWindow.scrollIntoView({ behavior: 'smooth', block: 'nearest' })">
+                        <div class="stop-header" data-stop-name="${stop}">
                             <div class="circle"></div>
                             <div>
                                 <div class="${stop === firstStop || stop === lastStop ? 'bold' : ''}">
@@ -1537,11 +1536,13 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                                 <div class="stop-time-info">${timeDisplay || 'Нет данных'}</div>
                             </div>
                             <div class="arrow-right">
-                                <img src="https://cdn-icons-png.flaticon.com/512/3652/3652191.png" class="calendar-icon" 
-                                     onclick="event.stopPropagation(); showFullScheduleForStop('${busNumber}', '${escapeForAttribute(stop)}', event)">
+                                <img src="https://cdn-icons-png.flaticon.com/512/3652/3652191.png" 
+                                     class="calendar-icon" 
+                                     data-bus-number="${busNumber}"
+                                     data-stop-name="${stop}">
                             </div>
                         </div>
-                        <div class="full-schedule-container" id="schedule-${busNumber}-${escapeForAttribute(stop)}"></div>
+                        <div class="full-schedule-container" id="schedule-${busNumber}-${index}"></div>
                     </div>
                 `;
                 return stopHTML;
@@ -1556,6 +1557,24 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                     <button class="action-btn" onclick="closeBusWindow('${busNumber}')">Закрыть</button>
                 </div>
             `;
+
+            document.querySelectorAll('.stop-header').forEach(header => {
+                header.addEventListener('click', function() {
+                    const stopName = this.dataset.stopName;
+                    showStopInfo(stopName);
+                    stopInfoWindow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            });
+            
+            document.querySelectorAll('.calendar-icon').forEach(icon => {
+                icon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const busNumber = this.dataset.busNumber;
+                    const stopName = this.dataset.stopName;
+                    showFullScheduleForStop(busNumber, stopName, e);
+                });
+            });
+            
             busWindow.style.display = 'block';
             
             // Добавляем маркер автобуса и обновляем его позицию
