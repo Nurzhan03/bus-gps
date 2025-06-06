@@ -1577,7 +1577,7 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                     e.stopPropagation();
                     const busNumber = this.dataset.busNumber;
                     const stopName = this.dataset.stopName;
-                    showFullScheduleForStop(busNumber, stopName, e, true);
+                    showFullScheduleForStop(busNumber, stopName, e);
                 });
             });
             
