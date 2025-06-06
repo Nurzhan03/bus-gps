@@ -1577,7 +1577,7 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                     e.stopPropagation();
                     const busNumber = this.dataset.busNumber;
                     const stopName = this.dataset.stopName;
-                    showFullScheduleForStop(busNumber, stopName, e);
+                    showFullScheduleForStop(busNumber, stopName, e, true);
                 });
             });
             
@@ -1588,30 +1588,41 @@ localStorage.setItem("buses", JSON.stringify(routesData));
         }
 
         // Функция для отображения полного расписания для конкретной остановки
-        function showFullScheduleForStop(busNumber, stopName, event) {
-            if (event) event.stopPropagation();
-            
-            // Изменяем способ поиска контейнера - теперь используем index вместо имени
-            let stopElement = event ? event.currentTarget.closest('.stop') : 
-                              document.querySelector(`.stop[data-stop-name="${stopName}"]`);
-            
-            let scheduleContainer = stopElement.querySelector('.full-schedule-container');
-            
-            if (scheduleContainer.style.display === 'block') {
-                scheduleContainer.style.display = 'none';
-                scheduleContainer.innerHTML = '';
-                return;
+        function showFullScheduleForStop(busNumber, stopName, event, isIntervalUpdate = false) {
+            if (event) {
+                event.stopPropagation();
+                
+                // Эта часть выполняется ТОЛЬКО при клике
+                let scheduleContainer = event.currentTarget.closest('.stop')
+                                      .querySelector('.full-schedule-container');
+                
+                if (scheduleContainer.style.display === 'block') {
+                    scheduleContainer.style.display = 'none';
+                    scheduleContainer.innerHTML = '';
+                    return;
+                }
+                
+                // Закрываем другие открытые расписания
+                document.querySelectorAll('.full-schedule-container').forEach(container => {
+                    if (container !== scheduleContainer) {
+                        container.style.display = 'none';
+                        container.innerHTML = '';
+                    }
+                });
             }
             
-            // Закрываем все другие открытые расписания
-            document.querySelectorAll('.full-schedule-container').forEach(container => {
-                if (container !== scheduleContainer) {
-                    container.style.display = 'none';
-                    container.innerHTML = '';
-                }
-            });
+            // Находим контейнер (для интервального обновления или после клика)
+            let scheduleContainer;
+            if (isIntervalUpdate) {
+                const container = document.querySelector(`.stop[data-bus-number="${busNumber}"][data-stop-name='${stopName.replace(/'/g, "\\'")}'] .full-schedule-container`);
+                if (!container || container.style.display !== 'block') return;
+                scheduleContainer = container;
+            } else {
+                scheduleContainer = event.currentTarget.closest('.stop')
+                                  .querySelector('.full-schedule-container');
+            }
             
-            // Остальной код функции остается без изменений
+            // Остальная логика обновления содержимого (выполняется и при клике, и по интервалу)
             let schedule = buses[busNumber][stopName];
             if (!schedule || schedule.length === 0) {
                 scheduleContainer.innerHTML = '<p>Нет данных о расписании</p>';
@@ -2132,7 +2143,7 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                             let idParts = container.id.split('-');
                             let busNum = idParts[1];
                             let stopName = idParts.slice(3).join('-');
-                            showFullScheduleForStop(busNum, stopName, {stopPropagation: () => {}});
+                            showFullScheduleForStop(busNum, stopName, {stopPropagation: () => {}}, true);
                         }
                     });
                 }
