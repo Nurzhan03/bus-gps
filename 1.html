@@ -1165,6 +1165,12 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                 .replace(/>/g, "&gt;")
                 .replace(/'/g, "&#039;");
         }
+
+        function safeAttrValue(value) {
+            return value
+                .replace(/"/g, '&quot;')  // Заменяем кавычки на HTML-сущность
+                .replace(/'/g, '&#039;');
+        }      
         
         function setupSearch() {
             // Скрываем результаты при клике вне поля поиска
@@ -1539,7 +1545,7 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                                 <img src="https://cdn-icons-png.flaticon.com/512/3652/3652191.png" 
                                      class="calendar-icon" 
                                      data-bus-number="${busNumber}"
-                                     data-stop-name="${stop}">
+                                     data-stop-name="${safeAttrValue(stop)}">
                             </div>
                         </div>
                         <div class="full-schedule-container" id="schedule-${busNumber}-${index}"></div>
