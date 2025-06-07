@@ -2190,16 +2190,6 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                             showFullSchedule(busNumber);
                         }
                     }
-                    
-                    // Обновляем открытые расписания остановок
-                    document.querySelectorAll('.full-schedule-container').forEach(container => {
-                        if (container.style.display === 'block') {
-                            let idParts = container.id.split('-');
-                            let busNum = idParts[1];
-                            let stopName = idParts.slice(3).join('-');
-                            showFullScheduleForStop(busNum, stopName, {stopPropagation: () => {}});
-                        }
-                    });
                 }
             }, 60000); // 1 секунда вместо 60 для более плавного движения
         }
