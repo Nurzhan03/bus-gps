@@ -982,9 +982,7 @@
                     // Обновляем открытые окна
                     let busWindow = document.getElementById(`bus-window-${busNumber}`);
                     if (busWindow && busWindow.style.display === 'block') {
-                        if (busWindow.innerHTML.includes("Схема маршрута")) {
-                            showRouteMap(busNumber);
-                        } else if (busWindow.innerHTML.includes("Расписание")) {
+                        if (busWindow.innerHTML.includes("Расписание")) {
                             showSchedule(busNumber);
                         } else if (busWindow.innerHTML.includes("Полное расписание")) {
                             showFullSchedule(busNumber);
@@ -2182,9 +2180,7 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                     // Обновляем открытые окна
                     let busWindow = document.getElementById(`bus-window-${busNumber}`);
                     if (busWindow && busWindow.style.display === 'block') {
-                        if (busWindow.innerHTML.includes("Схема маршрута")) {
-                            showRouteMap(busNumber);
-                        } else if (busWindow.innerHTML.includes("Расписание")) {
+                        if (busWindow.innerHTML.includes("Расписание")) {
                             showSchedule(busNumber);
                         } else if (busWindow.innerHTML.includes("Полное расписание")) {
                             showFullSchedule(busNumber);
