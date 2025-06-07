@@ -851,7 +851,7 @@
         
         <div class="mode-select">
             <button class="mode-btn admin-btn" id="adminModeBtn">
-                👓 Режим администратора
+                👓 Режим водителя
             </button>
             <button class="mode-btn user-btn" id="userModeBtn">
                 👤 Режим пользователя
@@ -859,8 +859,8 @@
         </div>
         
         <div class="admin-login" id="adminLogin">
-            <input type="password" id="adminPassword" placeholder="Введите пароль администратора">
-            <p class="error-msg" id="errorMsg">Неверный пароль!</p>
+            <input type="password" id="adminPassword" placeholder="Введите PIN водителя">
+            <p class="error-msg" id="errorMsg">Неверный PIN!</p>
             <button class="mode-btn admin-btn" id="loginBtn">Войти</button>
         </div>
     </div>
@@ -1100,7 +1100,7 @@ localStorage.setItem("buses", JSON.stringify(routesData));
         
         function startAdminMode() {
             isAdminMode = true;
-            userBadge.textContent = 'Администратор';
+            userBadge.textContent = 'Водитель';
             adminPanel.classList.remove('hidden');
             initializeApp();
         }
@@ -1265,11 +1265,6 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                                 </div>
                             </div>
                             <div class="bus-actions">
-                                ${isAdminMode ? `
-                                    <button class="action-btn admin-action" onclick="openAddStopWindow('${bus}')">Добавить остановку</button>
-                                    <button class="action-btn admin-action" onclick="editBusSchedule('${bus}')">Редактировать</button>
-                                    <button class="action-btn danger-action" onclick="deleteBus('${bus}')">Удалить</button>
-                                ` : ''}
                                 <button class="action-btn" onclick="showRouteMap('${bus}')">Маршрут</button>
                                 <button class="action-btn" onclick="showSchedule('${bus}')">Расписание</button>
                                 <button class="action-btn" onclick="showFullSchedule('${bus}')">Полное расписание</button>
