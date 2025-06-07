@@ -841,6 +841,93 @@
                 font-size: 12px;
             }
         }
+        
+        #map {
+          width: 100%;
+          height: calc(100% - 140px); /* подстраивай под высоту других элементов выше карты */
+          margin: 0;
+        }
+    
+        input, button {
+          padding: 10px;
+          font-size: 16px;
+          margin: 5px 0;
+          width: 100%;
+          box-sizing: border-box;
+        }
+    
+        .vehicle-marker {
+          position: relative;
+          display: flex;
+          align-items: center;
+          user-select: none;
+        }
+    
+        .vehicle-drop {
+          position: relative;
+          width: 25px;
+          height: 25px;
+          margin-right: 3px;
+        }
+    
+        .vehicle-drop img {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 25px;
+          height: 25px;
+        }
+    
+        .vehicle-drop img:nth-child(2) {
+          left: -2px;
+          top: -1px;
+        }
+    
+        .vehicle-marker__text {
+          display: flex;
+          background: #fff;
+          padding: 0 6px;
+          font-weight: bold;
+          font-size: 16px;
+          color: black;
+          align-items: center;
+          height: 25px;
+          line-height: 25px;
+        }
+    
+        #driverPanel {
+          display: none;
+        }
+    
+        @media (max-width: 600px) {
+          h2 {
+            font-size: 20px;
+            margin: 12px 0;
+          }
+    
+          input, button {
+            font-size: 15px;
+            padding: 12px;
+          }
+    
+          .vehicle-marker__text {
+            font-size: 14px;
+            padding: 0 5px;
+            height: 22px;
+            line-height: 22px;
+          }
+    
+          .vehicle-drop {
+            width: 22px;
+            height: 22px;
+            margin-right: 2px;
+          }
+    
+          .vehicle-drop img {
+            width: 22px;
+            height: 22px;
+          }
+        }
     </style>
 </head>
 <body>
