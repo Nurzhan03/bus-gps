@@ -2179,7 +2179,7 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                 for (let busNumber in buses) {
                     updateBusMarkerPosition(busNumber);
                     
-                    // Обновляем открытые окна
+                    // Обновляем открытые окна, но не закрываем расписания остановок
                     let busWindow = document.getElementById(`bus-window-${busNumber}`);
                     if (busWindow && busWindow.style.display === 'block') {
                         if (busWindow.innerHTML.includes("Схема маршрута")) {
@@ -2190,18 +2190,28 @@ localStorage.setItem("buses", JSON.stringify(routesData));
                             showFullSchedule(busNumber);
                         }
                     }
-                    
-                    // Обновляем открытые расписания остановок
-                    document.querySelectorAll('.full-schedule-container').forEach(container => {
-                        if (container.style.display === 'block') {
-                            let idParts = container.id.split('-');
-                            let busNum = idParts[1];
-                            let stopName = idParts.slice(3).join('-');
-                            showFullScheduleForStop(busNum, stopName, {stopPropagation: () => {}});
-                        }
-                    });
                 }
-            }, 60000); // 1 секунда вместо 60 для более плавного движения
+                
+                // Обновляем открытые расписания остановок без их закрытия
+                document.querySelectorAll('.full-schedule-container').forEach(container => {
+                    if (container.style.display === 'block') {
+                        let idParts = container.id.split('-');
+                        let busNum = idParts[1];
+                        let stopIndex = idParts[2];
+                        let stopElement = document.getElementById(`stop-${busNum}-${stopIndex}`);
+                        if (stopElement) {
+                            let stopName = stopElement.querySelector('.stop-header').dataset.stopName;
+                            // Сохраняем текущее содержимое перед обновлением
+                            let oldContent = container.innerHTML;
+                            // Обновляем расписание
+                            showFullScheduleForStop(busNum, stopName, {stopPropagation: () => {}});
+                            // Восстанавливаем открытое состояние
+                            container.style.display = 'block';
+                            container.innerHTML = oldContent;
+                        }
+                    }
+                });
+            }, 60000); // 1 минута
         }
         
         function showSchedule(busNumber) {
