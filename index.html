@@ -1014,7 +1014,6 @@
         const searchInput = document.getElementById('searchInput');
         const searchResults = document.getElementById('searchResults');
         const busNumberInput = document.getElementById('busNumber');
-        const addBusBtn = document.getElementById('addBusBtn');
         const busList = document.getElementById('busList');
         const stopInfoWindow = document.getElementById('stopInfoWindow');
         const modeSwitchBtn = document.getElementById('modeSwitchBtn');
@@ -1032,7 +1031,6 @@
             
             // Обработчики событий для основного приложения
             searchInput.addEventListener('input', handleSearchInput);
-            addBusBtn.addEventListener('click', addBus);
             modeSwitchBtn.addEventListener('click', switchMode);
             showStopsBtn.addEventListener('click', toggleStopsList);
             
@@ -1084,7 +1082,7 @@
                 width: "100vw",
                 height: "100vh",
                 backgroundColor: "rgba(0, 0, 0, 0.5)",
-                display: "none", // СКРЫТО изначально
+                visibility: "hidden", // СКРЫТО изначально
                 justifyContent: "center",
                 alignItems: "center",
                 zIndex: 9999,
