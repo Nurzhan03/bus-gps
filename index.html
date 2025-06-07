@@ -2516,7 +2516,7 @@
           let currentDriver = null;
           let watchId = null;
           let prevPosition = null;
-          const busMarkers = {};
+          const markers = {};
         
           const map = L.map('map').setView([50.20232, 81.72463], 16);
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -2776,9 +2776,9 @@
               btn.innerText = "Начать смену";
               document.getElementById("changeRouteBtn").style.display = "none";
         
-              if (busMarkers[currentDriver]) {
-                map.removeLayer(busMarkers[currentDriver].marker);
-                delete busMarkers[currentDriver];
+              if (markers[currentDriver]) {
+                map.removeLayer(markers[currentDriver].marker);
+                delete markers[currentDriver];
               }
             }
           }
@@ -2798,8 +2798,8 @@
                           const newLatLng = L.latLng(data.latitude, data.longitude);
                           const angle = data.angle ?? 0;
           
-                          if (busMarkers[key]) {
-                              const markerObj = busMarkers[key];
+                          if (markers[key]) {
+                              const markerObj = markers[key];
                               const marker = markerObj.marker;
                               const oldLatLng = marker.getLatLng();
                               const oldAngle = markerObj.angle ?? 0;
@@ -2826,11 +2826,11 @@
                                   icon: createBusMarker(data.route, angle)
                               }).addTo(map);
                               marker.bindPopup("Водитель: " + key + "<br>Маршрут: " + (data.route ?? "—"));
-                              busMarkers[key] = { marker, angle };
+                              markers[key] = { marker, angle };
                           }
-                      } else if (busMarkers[key]) {
-                          map.removeLayer(busMarkers[key].marker);
-                          delete busMarkers[key];
+                      } else if (markers[key]) {
+                          map.removeLayer(markers[key].marker);
+                          delete markers[key];
                       }
                   });
               });
