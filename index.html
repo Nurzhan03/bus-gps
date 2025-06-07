@@ -848,14 +848,6 @@
           margin: 0;
         }
     
-        input, button {
-          padding: 10px;
-          font-size: 16px;
-          margin: 5px 0;
-          width: 100%;
-          box-sizing: border-box;
-        }
-    
         .vehicle-marker {
           position: relative;
           display: flex;
@@ -1077,6 +1069,71 @@
                     }
                 }
             }, 15000); // 15 секунд 
+
+            /*######################### Map #########################*/
+
+              if (document.getElementById("busTrackerModal")) return;
+            
+              const modal = document.createElement("div");
+              modal.id = "busTrackerModal";
+              Object.assign(modal.style, {
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                display: "none", // СКРЫТО изначально
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 9999,
+              });
+            
+              const content = document.createElement("div");
+              Object.assign(content.style, {
+                position: "relative",
+                width: "95vw",
+                height: "95vh",
+                backgroundColor: "#fff",
+                borderRadius: "8px",
+                overflow: "auto",
+              });
+            
+              const closeBtn = document.createElement("span");
+              closeBtn.innerHTML = "&times;";
+              Object.assign(closeBtn.style, {
+                position: "absolute",
+                top: "10px",
+                right: "15px",
+                fontSize: "28px",
+                fontWeight: "bold",
+                color: "#999",
+                cursor: "pointer",
+                zIndex: 10,
+              });
+              closeBtn.onmouseenter = () => (closeBtn.style.color = "#000");
+              closeBtn.onmouseleave = () => (closeBtn.style.color = "#999");
+              closeBtn.onclick = () => {
+                modal.style.display = "none";
+              };
+            
+              content.appendChild(closeBtn);
+            
+              const container = document.createElement("div");
+              container.innerHTML = `
+                <!-- Твой HTML -->
+                <div id="driverPanel" style="display:none;">
+                  <input type="text" id="routeInput" placeholder="Номер маршрута" />
+                  <button id="startStopBtn" onclick="toggleTracking()">Начать смену</button>
+                  <button id="changeRouteBtn" onclick="changeRoute()">Поменять маршрут</button>
+                </div>
+                
+                <div id="map""></div>
+              `;
+            
+              content.appendChild(container);
+              modal.appendChild(content);
+              document.body.appendChild(modal);
         });
 
         const routesData = {
@@ -1171,63 +1228,10 @@
         localStorage.setItem("buses", JSON.stringify(routesData));
 
         function showOnMap() {
-          const existing = document.getElementById("busTrackerModal");
-          if (existing) existing.remove();
-        
-          const modal = document.createElement("div");
-          modal.id = "busTrackerModal";
-          Object.assign(modal.style, {
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 9999,
-          });
-        
-          const content = document.createElement("div");
-          Object.assign(content.style, {
-            position: "relative",
-            width: "90vw",
-            height: "90vh",
-            backgroundColor: "#fff",
-            borderRadius: "8px",
-            overflow: "hidden",
-            boxShadow: "0 0 10px rgba(0,0,0,0.3)",
-          });
-        
-          const closeBtn = document.createElement("span");
-          closeBtn.innerHTML = "&times;";
-          Object.assign(closeBtn.style, {
-            position: "absolute",
-            top: "10px",
-            right: "15px",
-            fontSize: "28px",
-            fontWeight: "bold",
-            color: "#999",
-            cursor: "pointer",
-            zIndex: 10,
-          });
-          closeBtn.onmouseenter = () => (closeBtn.style.color = "#000");
-          closeBtn.onmouseleave = () => (closeBtn.style.color = "#999");
-          closeBtn.onclick = () => modal.remove();
-        
-          const iframe = document.createElement("iframe");
-          Object.assign(iframe.style, {
-            width: "100%",
-            height: "100%",
-            border: "none",
-          });
-          iframe.src = "1.html";
-        
-          content.appendChild(closeBtn);
-          content.appendChild(iframe);
-          modal.appendChild(content);
-          document.body.appendChild(modal);
+          const modal = document.getElementById("busTrackerModal");
+          if (modal) {
+            modal.style.display = "flex";
+          }
         }
         
         // Функции экрана приветствия
@@ -2492,6 +2496,348 @@
             // Очищаем состояние приложения (без удаления данных)
             localStorage.setItem('appState', 'inactive');
         }
+
+        /*######################### Map #########################*/
+
+          const firebaseConfig = {
+            apiKey: "AIzaSyBc-x0sFbt16lzmMx77dLwysXGJUOsXKsY",
+            authDomain: "bustrackerweb.firebaseapp.com",
+            projectId: "bustrackerweb",
+            storageBucket: "bustrackerweb.appspot.com",
+            messagingSenderId: "325393024111",
+            appId: "1:325393024111:web:d78728eb97180a03aeb99a",
+            measurementId: "G-TRVJFYPJXZ",
+            databaseURL: "https://bustrackerweb-default-rtdb.europe-west1.firebasedatabase.app"
+          };
+        
+          firebase.initializeApp(firebaseConfig);
+          const db = firebase.database();
+        
+          let currentDriver = null;
+          let watchId = null;
+          let prevPosition = null;
+          const busMarkers = {};
+        
+          const map = L.map('map').setView([50.20232, 81.72463], 16);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+          }).addTo(map);
+        
+          function calculateAngle(p1, p2) {
+            const lat1 = p1.lat * Math.PI / 180;
+            const lat2 = p2.lat * Math.PI / 180;
+            const dLon = (p2.lng - p1.lng) * Math.PI / 180;
+        
+            const y = Math.sin(dLon) * Math.cos(lat2);
+            const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+            let brng = Math.atan2(y, x) * 180 / Math.PI;
+        
+            return (brng + 360) % 360;
+          }
+          const stopIcon = L.icon({
+            iconUrl: "https://oskemenbus.kz/assets/images/map-icons/stop-icons/city_transport_stop.svg",
+            iconSize: [32, 32],       // можно изменить под размер иконки
+            iconAnchor: [16, 16],     // центр иконки будет в точке
+          });
+          const stops = [
+            { lat: 50.19912, lng: 81.72813, name: "п.Октябрьский" },
+            { lat: 50.19899, lng: 81.72786, name: "п.Октябрьский" },
+            { lat: 50.20026, lng: 81.72846, name: "Перекрёсток" },
+            { lat: 50.2005, lng: 81.72830, name: "Перекрёсток" },
+            { lat: 50.20185, lng: 81.72890, name: "Ул.Коммунальная" },
+            { lat: 50.20189, lng: 81.72870, name: "Ул.Коммунальная" },
+            { lat: 50.20308, lng: 81.72853, name: "Спортивный комплекс" },
+            { lat: 50.20297, lng: 81.72827, name: "Спортивный комплекс" },
+            { lat: 50.20317, lng: 81.72743, name: "ГСК \"Центральный\"" },
+            { lat: 50.20307, lng: 81.72729, name: "ГСК \"Центральный\"" },
+            { lat: 50.20261, lng: 81.72557, name: "Овощебаза" },
+            { lat: 50.20244, lng: 81.72580, name: "Овощебаза" },
+            { lat: 50.2012, lng: 81.72543, name: "Ул.Центральная" },
+            { lat: 50.20109, lng: 81.72518, name: "Ул.Центральная" },
+            { lat: 50.20088, lng: 81.72464, name: "Акимат" },
+            { lat: 50.20102, lng: 81.72336, name: "Школа" },
+            { lat: 50.20048, lng: 81.72520, name: "Центральный парк" },
+            { lat: 50.20045, lng: 81.72494, name: "Центральный парк" },
+            { lat: 50.19963, lng: 81.72499, name: "Ул.Машиностроителей" },
+            { lat: 50.19973, lng: 81.72466, name: "Ул.Машиностроителей" },
+            { lat: 50.19939, lng: 81.72401, name: "Узел связи" },
+            { lat: 50.19920, lng: 81.7238, name: "Узел связи" },
+            { lat: 50.19903, lng: 81.72452, name: "Областной театр драмы" },
+            { lat: 50.19894, lng: 81.72482, name: "Областной театр драмы" },
+            { lat: 50.19842, lng: 81.72433, name: "Тургенева" },
+            { lat: 50.19836, lng: 81.7246, name: "Тургенева" },
+            { lat: 50.19765, lng: 81.72442, name: "По требованию" },
+            { lat: 50.19757, lng: 81.72533, name: "Ул.Грейдерная" }, 
+            { lat: 50.1975, lng: 81.72512, name: "Ул.Грейдерная" },
+            { lat: 50.19744, lng: 81.72624, name: "Ул.Байзакова" },
+            { lat: 50.19734, lng: 81.7265, name: "Ул.Грейдерная" },     
+            { lat: 50.19745, lng: 81.72765, name: "Поворот" },
+            { lat: 50.19742, lng: 81.72893, name: "По требованию" }, 
+            { lat: 50.1979, lng: 81.72920, name: "Ул.Техническая" },
+            { lat: 50.19802, lng: 81.72901, name: "Ул.Техническая" },
+            { lat: 50.19844, lng: 81.72933, name: "Ул.Магистральная" },
+            { lat: 50.1985, lng: 81.7291 , name: "Ул.Магистральная" },
+            { lat: 50.20146, lng: 81.73030, name: "Ул.Садовая" },
+            { lat: 50.20148, lng: 81.73006, name: "Ул.Садовая" },
+            { lat: 50.20242, lng: 81.73075, name: "Ул.Гоголя" },
+            { lat: 50.20298, lng: 81.72194, name: "Ул.Шевченко" },
+            { lat: 50.20284, lng: 81.7198, name: "Ул.Нагорная" },
+            { lat: 50.20003, lng: 81.72137, name:  "Монумент \"Победы\"" },
+            { lat: 50.19893, lng: 81.72854, name: "Автопарк" },
+            { lat: 50.19878, lng: 81.72859, name: "Автопарк" },
+            { lat: 50.19864, lng: 81.7287, name: "Автопарк (приб.)" },
+            { lat: 50.19078, lng: 81.73204, name: "Мост" },
+            { lat: 50.19074, lng: 81.73173, name: "Мост" },
+            { lat: 50.18728, lng: 81.73705, name: "о.п Узын агаш" },
+            { lat: 50.18723, lng: 81.73680, name: "о.п Узын агаш" },
+            { lat: 50.18611, lng: 81.74317, name: "Казахстан" },
+            { lat: 50.18621, lng: 81.743, name: "Казахстан" },
+            { lat: 50.18794, lng: 81.74566, name: "Сарыарка" },
+            { lat: 50.18814, lng: 81.74561, name: "Сарыарка" },
+            { lat: 50.19121, lng: 81.74962, name: "Водоканал" },
+            { lat: 50.19144, lng: 81.74969, name: "Водоканал" },
+            { lat: 50.19388, lng: 81.75294, name: "ГМК" },
+            { lat: 50.19398, lng: 81.75268, name: "ГМК" },
+            { lat: 50.19669, lng: 81.75637, name: "о.п Жайлау" },
+            { lat: 50.19716, lng: 81.75648, name: "о.п Жайлау" },
+            { lat: 50.20106, lng: 81.76189, name: "о.п Уш терек" },
+            { lat: 50.20135, lng: 81.76164, name: "о.п Уш терек" },
+            { lat: 50.2085, lng: 81.76724, name: "о.п Жазык" },
+            { lat: 50.20862, lng: 81.76692, name: "о.п Жазык" },
+            { lat: 50.21528, lng: 81.76793, name: "о.п Тарбагатай" },
+            { lat: 50.21524, lng: 81.76763, name: "о.п Тарбагатай" },
+            { lat: 50.22112, lng: 81.76188, name: "По требованию" },
+            { lat: 50.22139, lng: 81.7589, name: "Магазин \"Арман\"" },
+            { lat: 50.20026, lng: 81.72723, name: "По требованию" },
+            { lat: 50.20047, lng: 81.72644, name: "Сейфуллина" },
+            { lat: 50.20034, lng: 81.72628, name: "Сейфуллина" },
+            { lat: 50.19944, lng: 81.72822, name: "Ул.Амре Кашаубаева" },  
+            { lat: 50.19925, lng: 81.72792, name: "Ул.Амре Кашаубаева" },  
+          ];
+          stops.forEach(stop => {
+          L.marker([stop.lat, stop.lng], { icon: stopIcon })
+            .addTo(map)
+            .bindPopup(stop.name);
+        });
+          function createBusMarker(route, angle = 0) {
+            const html = `
+              <div class="vehicle-marker">
+                <div class="vehicle-drop">
+                  <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/background/bus.svg" alt="bg" style="transform: rotate(${(angle + 180) % 360}deg); transition: transform 0.5s;">
+                  <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" alt="icon">
+                </div>
+                <div class="vehicle-marker__text">
+                  <span>${route ?? ''}</span>
+                </div>
+              </div>
+            `;
+            return L.divIcon({
+              html,
+              className: "",
+              iconSize: [90, 25],
+              iconAnchor: [45, 12]
+            });
+          }
+        
+          function updateRouteText(marker, route) {
+            const textSpan = marker.getElement().querySelector('.vehicle-marker__text span');
+            if (textSpan) textSpan.textContent = route ?? '';
+          }
+        
+          function animateMarker(marker, fromLatLng, toLatLng, duration = 1000) {
+            const startTime = performance.now();
+        
+            function animate(currentTime) {
+              const elapsed = currentTime - startTime;
+              const progress = Math.min(elapsed / duration, 1);
+        
+              const lat = fromLatLng.lat + (toLatLng.lat - fromLatLng.lat) * progress;
+              const lng = fromLatLng.lng + (toLatLng.lng - fromLatLng.lng) * progress;
+              marker.setLatLng([lat, lng]);
+        
+              if (progress < 1) {
+                requestAnimationFrame(animate);
+              }
+            }
+        
+            requestAnimationFrame(animate);
+          }
+        
+          function animateRotation(marker, fromAngle, toAngle, duration = 500) {
+            const bgImg = marker.getElement().querySelector('img[alt="bg"]');
+            if (!bgImg) return;
+        
+            const startTime = performance.now();
+        
+            function animate(currentTime) {
+              const elapsed = currentTime - startTime;
+              const progress = Math.min(elapsed / duration, 1);
+        
+              const delta = ((((toAngle - fromAngle + 540) % 360) - 180) + 360) % 360;
+              const currentAngle = (fromAngle + delta * progress) % 360;
+        
+              bgImg.style.transform = `rotate(${(currentAngle + 180) % 360}deg)`;
+        
+              if (progress < 1) {
+                requestAnimationFrame(animate);
+              }
+            }
+        
+            requestAnimationFrame(animate);
+          }
+        
+          function login() {
+            const pin = document.getElementById("pinInput").value;
+            db.ref("drivers").orderByChild("pin").equalTo(pin).once("value", snap => {
+              if (snap.exists()) {
+                const driverId = Object.keys(snap.val())[0];
+                currentDriver = driverId;
+                const driverData = snap.val()[driverId];
+        
+                document.getElementById("loginPanel").style.display = "none";
+                document.getElementById("driverPanel").style.display = "block";
+        
+                document.getElementById("routeInput").value = driverData.route ?? '';
+                const changeBtn = document.querySelector('button[onclick="changeRoute()"]');
+                changeBtn.style.display = driverData.route ? "inline-block" : "none";
+        
+                if (driverData.latitude && driverData.longitude) {
+                  document.getElementById("startStopBtn").innerText = "Завершить смену";
+        
+                  if (!navigator.geolocation) return alert("Геолокация не поддерживается");
+                  prevPosition = L.latLng(driverData.latitude, driverData.longitude);
+                  startTracking();
+                } else {
+                  document.getElementById("startStopBtn").innerText = "Начать смену";
+                }
+              } else {
+                alert("Неверный PIN");
+              }
+            });
+          }
+        
+          function startTracking() {
+            watchId = navigator.geolocation.watchPosition(pos => {
+              const currPos = L.latLng(pos.coords.latitude, pos.coords.longitude);
+              const route = document.getElementById("routeInput").value;
+        
+              const distanceMoved = prevPosition ? currPos.distanceTo(prevPosition) : Infinity;
+              if (distanceMoved < 3) return; // Игнорируем шум < 3 м
+        
+              let angle = 0;
+              if (prevPosition) {
+                angle = calculateAngle(prevPosition, currPos);
+              }
+              prevPosition = currPos;
+        
+              db.ref("drivers/" + currentDriver).update({
+                latitude: currPos.lat,
+                longitude: currPos.lng,
+                timestamp: new Date().toISOString(),
+                route,
+                angle
+              });
+        
+              map.panTo(currPos, { animate: true, duration: 0.5 });
+        
+            }, err => {
+              alert("Ошибка геолокации: " + err.message);
+            }, {
+              enableHighAccuracy: true,
+              maximumAge: 1000
+            });
+          }
+        
+          function toggleTracking() {
+            const btn = document.getElementById("startStopBtn");
+        
+            if (btn.innerText === "Начать смену") {
+              if (!navigator.geolocation) return alert("Геолокация не поддерживается");
+              startTracking();
+              btn.innerText = "Завершить смену";
+              document.getElementById("changeRouteBtn").style.display = "inline-block";
+            } else {
+              if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+              }
+        
+              db.ref("drivers/" + currentDriver).update({
+                latitude: null,
+                longitude: null,
+                timestamp: null,
+                route: null,
+                angle: null
+              });
+        
+              prevPosition = null;
+              document.getElementById("routeInput").value = "";
+              document.querySelector('button[onclick="changeRoute()"]').style.display = "none";
+              btn.innerText = "Начать смену";
+              document.getElementById("changeRouteBtn").style.display = "none";
+        
+              if (busMarkers[currentDriver]) {
+                map.removeLayer(busMarkers[currentDriver].marker);
+                delete busMarkers[currentDriver];
+              }
+            }
+          }
+        
+          function changeRoute() {
+            const route = document.getElementById("routeInput").value;
+            db.ref("drivers/" + currentDriver).update({ route });
+          }
+        
+          function updateMarkers() {
+              db.ref("drivers").once("value", snap => {
+                  snap.forEach(child => {
+                      const key = child.key;
+                      const data = child.val();
+          
+                      if (data.latitude && data.longitude) {
+                          const newLatLng = L.latLng(data.latitude, data.longitude);
+                          const angle = data.angle ?? 0;
+          
+                          if (busMarkers[key]) {
+                              const markerObj = busMarkers[key];
+                              const marker = markerObj.marker;
+                              const oldLatLng = marker.getLatLng();
+                              const oldAngle = markerObj.angle ?? 0;
+          
+                              // Проверяем, действительно ли позиция изменилась
+                              const positionChanged = oldLatLng.distanceTo(newLatLng) > 3; // > 3 метров
+                              
+                              // Плавное движение только если позиция изменилась
+                              if (positionChanged) {
+                                  animateMarker(marker, oldLatLng, newLatLng);
+                              }
+          
+                              // Плавный поворот только если угол изменился значительно и есть движение
+                              const angleDiff = Math.abs((((angle - oldAngle + 540) % 360) - 180));
+                              if (angleDiff > 10 && positionChanged) { // Увеличил порог до 10 градусов
+                                  animateRotation(marker, oldAngle, angle);
+                                  markerObj.angle = angle;
+                              }
+          
+                              // Обновить текст маршрута
+                              updateRouteText(marker, data.route);
+                          } else {
+                              const marker = L.marker(newLatLng, {
+                                  icon: createBusMarker(data.route, angle)
+                              }).addTo(map);
+                              marker.bindPopup("Водитель: " + key + "<br>Маршрут: " + (data.route ?? "—"));
+                              busMarkers[key] = { marker, angle };
+                          }
+                      } else if (busMarkers[key]) {
+                          map.removeLayer(busMarkers[key].marker);
+                          delete busMarkers[key];
+                      }
+                  });
+              });
+          }
+        
+          db.ref("drivers").on("value", updateMarkers);
+          updateMarkers();
     </script>
 </body>
 </html>
