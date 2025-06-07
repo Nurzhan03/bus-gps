@@ -1082,7 +1082,7 @@
                 width: "100vw",
                 height: "100vh",
                 backgroundColor: "rgba(0, 0, 0, 0.5)",
-                visibility: "hidden", // СКРЫТО изначально
+                display: "none", // СКРЫТО изначально
                 justifyContent: "center",
                 alignItems: "center",
                 zIndex: 9999,
@@ -1230,6 +1230,16 @@
           const modal = document.getElementById("busTrackerModal");
           if (modal) {
             modal.style.display = "flex";
+
+            if (!window._leafletMapInitialized) {
+              setTimeout(() => {
+                const map = L.map('map').setView([50.20232, 81.72463], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                  attribution: '&copy; OpenStreetMap'
+                }).addTo(map);
+                window._leafletMapInitialized = true;
+              }, 0); // Или чуть дольше, если нужно дождаться полной отрисовки
+            }
           }
         }
         
@@ -2514,11 +2524,6 @@
           let watchId = null;
           let prevPosition = null;
           const markers = {};
-        
-          const map = L.map('map').setView([50.20232, 81.72463], 16);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap'
-          }).addTo(map);
         
           function calculateAngle(p1, p2) {
             const lat1 = p1.lat * Math.PI / 180;
