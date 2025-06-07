@@ -1974,12 +1974,27 @@ localStorage.setItem("buses", JSON.stringify(routesData));
             sortedStops.forEach(stop => {
                 let div = document.createElement("div");
                 div.className = "bus-item";
-                div.innerHTML = `
-                    <div class="search-item" onclick="showStopInfo('${escapeHtml(stop)}')">
-                        <img src="https://oskemenbus.kz/assets/images/map-icons/stop-icons/city_transport_stop.svg" width="50" height="50" style="margin-right: 6px;">
-                        ${escapeHtml(stop)}
-                    </div>
-                `;
+                
+                let stopItem = document.createElement("div");
+                stopItem.className = "search-item";
+                
+                let img = document.createElement("img");
+                img.src = "https://oskemenbus.kz/assets/images/map-icons/stop-icons/city_transport_stop.svg";
+                img.width = 50;
+                img.height = 50;
+                img.style.marginRight = "6px";
+                
+                let text = document.createTextNode(escapeHtml(stop));
+                
+                stopItem.appendChild(img);
+                stopItem.appendChild(text);
+                
+                // Добавляем обработчик события через addEventListener
+                stopItem.addEventListener("click", function() {
+                    showStopInfo(stop);
+                });
+                
+                div.appendChild(stopItem);
                 stopsList.appendChild(div);
             });
         }
