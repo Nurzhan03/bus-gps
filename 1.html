@@ -1647,20 +1647,6 @@ localStorage.setItem("buses", JSON.stringify(routesData));
             
             let scheduleContainer = stopElement.querySelector('.full-schedule-container');
             
-            if (scheduleContainer.style.display === 'block') {
-                scheduleContainer.style.display = 'none';
-                scheduleContainer.innerHTML = '';
-                return;
-            }
-            
-            // Закрываем все другие открытые расписания
-            document.querySelectorAll('.full-schedule-container').forEach(container => {
-                if (container !== scheduleContainer) {
-                    container.style.display = 'none';
-                    container.innerHTML = '';
-                }
-            });
-            
             // Остальной код функции остается без изменений
             let schedule = buses[busNumber][stopName];
             if (!schedule || schedule.length === 0) {
