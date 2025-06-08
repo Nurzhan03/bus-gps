@@ -318,7 +318,6 @@
   }
 
   (function login() {
-    const pin = document.getElementById("pinInput").value;
     db.ref("drivers").once("value", snap => {
       if (snap.exists()) {
         currentDriver = localStorage.getItem('driverId');
