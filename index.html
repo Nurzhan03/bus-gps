@@ -1135,9 +1135,23 @@
         }
         
         function checkAdminPassword() {
-            if (adminPassword.value === ADMIN_PASSWORD) {
+            const drivers = {
+              driver1: 1111,
+              driver2: 2222
+            };
+            
+            let matchFound = false;
+            
+            for (const [key, value] of Object.entries(drivers)) {
+              if (value === adminPassword.value) {
+                localStorage.setItem('driverId', key);
                 startAdminMode();
-            } else {
+                matchFound = true;
+                break;
+              }
+            }
+            
+            if (!matchFound) {
                 errorMsg.style.display = 'block';
             }
         }
