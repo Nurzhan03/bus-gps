@@ -1,2304 +1,480 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BusTracker - Расписание автобусов</title>
-    <style>
-        /* Общие стили */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f5f7fa;
-            color: #333;
-            line-height: 1.6;
-            padding: 20px;
-        }
-        
-        /* Контейнеры */
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-        
-        /* Отступы для всехладок */
-        .app-content, .welcome-screen, .admin-login,
-        .bus-window > .container, .stop-window {
-            padding: 15px;
-        }
-        
-        /* Экран приветствия */
-        .welcome-screen {
-            text-align: center;
-        }
-        
-        .welcome-title {
-            font-size: 24px;
-            margin-bottom: 15px;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .welcome-title img {
-            width: 30px;
-            height: 30px;
-            margin-right: 10px;
-        }
-        
-        .mode-select {
-            margin-top: 20px;
-        }
-        
-        .mode-btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .admin-btn {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        .user-btn {
-            background-color: #2ecc71;
-            color: white;
-        }
-        
-        .mode-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Форма входа администратора */
-        .admin-login {
-            display: none;
-            margin-top: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        
-        .admin-login input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border 0.3s;
-        }
-        
-        .admin-login input:focus {
-            border-color: #3498db;
-            outline: none;
-        }
-        
-        .error-msg {
-            color: #e74c3c;
-            margin: 10px 0;
-            display: none;
-            font-size: 14px;
-        }
-        
-        /* Основное приложение */
-        .app-header {
-            padding: 15px;
-            background: #3498db;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .app-title {
-            font-size: 18px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-        }
-        
-        .app-title img {
-            width: 25px;
-            height: 25px;
-            margin-right: 8px;
-        }
-        
-        .user-badge {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-        
-        .app-content {
-            padding: 15px;
-        }
-        
-        /* Панель поиска */
-        .search-container {
-            margin-bottom: 12px;
-            position: relative;
-            display: flex;
-            width: 100%;
-        }
-        
-        .search-input-container {
-            flex-grow: 1;
-            position: relative;
-            min-width: 0;
-        }
-        
-        .search-input {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 8px 0 0 8px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-        
-        .search-button {
-            padding: 0 15px;
-            background: #2ecc71;
-            color: white;
-            border: none;
-            border-radius: 0 8px 8px 0;
-            cursor: pointer;
-            font-size: 14px;
-            white-space: nowrap;
-        }
-        
-        .search-results {
-            position: absolute;
-            background: white;
-            width: 100%;
-            border: 1px solid #ddd;
-            border-radius: 0 0 5px 5px;
-            z-index: 100;
-            display: none;
-            top: 100%;
-            left: 0;
-            margin-top: -2px;
-            max-height: 200px;
-            overflow-y: auto;
-            font-size: 14px;
-        }
-        
-        .search-item {
-            padding: 8px;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-        }
-        
-        .search-item:hover {
-            background-color: #f5f5f5;
-        }
-        
-        .not-found {
-            padding: 8px;
-            color: #666;
-            text-align: center;
-            font-size: 14px;
-        }
-        
-        /* Список автобусов */
-        .bus-list {
-            margin-top: 15px;
-        }
-        
-        .bus-item {
-            background: white;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-        
-        .bus-header {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 8px;
-        }
-        
-        .bus-number-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        
-        .bus-number {
-            font-size: 16px;
-            font-weight: bold;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
-        }
-        
-        .bus-number img {
-            width: 20px;
-            height: 20px;
-            margin-right: 6px;
-        }
-        
-        .bus-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-        
-        .action-btn {
-            padding: 6px 10px;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-        
-        .action-btn:hover {
-            background: #2980b9;
-            transform: translateY(-1px);
-        }
-        
-        .admin-action {
-            background: #2ecc71;
-        }
-        
-        .admin-action:hover {
-            background: #27ae60;
-        }
-        
-        .danger-action {
-            background: #e74c3c;
-        }
-        
-        .danger-action:hover {
-            background: #c0392b;
-        }
-        
-        /* Окна с информацией */
-        .bus-window, .stop-window {
-            width: 100%;
-            margin-top: 10px;
-            display: none;
-        }
-        
-        .stop-info {
-            padding: 8px;
-            background: #eee;
-            border-radius: 5px;
-            margin-top: 5px;
-            font-size: 14px;
-        }
-        
-        .highlight {
-            color: limegreen;
-            font-size: 16px;
-        }
-        
-        /* Карта маршрута */
-        .route-map {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            position: relative;
-            margin-left: 15px;
-        }
-        
-        .route-map .stop {
-            display: flex;
-            flex-direction: column;
-            margin: 0;
-            width: 100%;
-            position: relative;
-            padding-bottom: 25px;
-        }
-        
-        .route-map .stop:last-child {
-            padding-bottom: 0;
-        }
-        
-        .route-map .stop .stop-header {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            padding: 8px;
-            background: #f9f9f9;
-            border-radius: 5px;
-            margin-bottom: 2px;
-            cursor: pointer;
-            position: relative;
-            z-index: 2;
-            font-size: 14px;
-        }
-        
-        .route-map .stop .circle {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #000;
-            margin-right: 8px;
-            position: relative;
-            z-index: 2;
-        }
-        
-        .route-map .stop .arrow-right {
-            font-size: 14px;
-            color: #666;
-            margin-left: auto;
-        }
-        
-        .stop-title {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-        
-        .transport-list {
-            margin-top: 12px;
-        }
-        
-        .transport-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-            padding: 8px;
-            background: #f9f9f9;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        
-        .bus-icon {
-            font-size: 16px;
-            margin-right: 8px;
-        }
-        
-        .bus-number {
-            font-weight: bold;
-            margin-right: 12px;
-            min-width: 25px;
-        }
-        
-        .bus-time {
-            display: flex;
-            align-items: center;
-            color: limegreen;
-            margin-left: auto;
-            font-size: 14px;
-        }
-        
-        .time-circle {
-            width: 6px;
-            height: 6px;
-            background-color: limegreen;
-            border-radius: 50%;
-            margin-right: 4px;
-        }
-        
-        .action-buttons {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 15px;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-        
-        .action-button {
-            padding: 6px 12px;
-            background: #f0f0f0;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            flex-grow: 1;
-            text-align: center;
-        }
-        
-        .stop-content {
-            display: flex;
-            align-items: center;
-            width: 100%;
-        }
-        
-        .boarding-status {
-            background-color: #4CAF50;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 12px;
-            font-size: 11px;
-            margin-left: 8px;
-            border: 1px solid #2d7d32;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            white-space: nowrap;
-        }
-        
-        .arriving-status {
-            color: limegreen;
-            font-size: 16px;
-        }
-        
-        .bus-list-item {
-            position: relative;
-        }
-        
-        /* Кнопка смены режима */
-        .mode-switch-btn {
-            position: fixed;
-            bottom: 15px;
-            right: 15px;
-            padding: 10px 15px;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            z-index: 100;
-            transition: all 0.3s;
-            font-size: 14px;
-        }
-        .mode-switch-btn:hover {
-            background: #2980b9;
-            transform: translateY(-2px);
-        }
-        
-        /* Форма добавления остановки */
-        .add-stop-container {
-            margin-top: 8px;
-        }
-        
-        .add-stop-container input {
-            width: 100%;
-            padding: 8px;
-            margin: 4px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-        
-        .bold {
-            font-weight: bold;
-        }
-        
-        .arriving {
-            color: limegreen;
-            font-weight: bold;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        /* Стили для полного расписания */
-        .stop-item {
-            padding: 8px;
-            background: #f9f9f9;
-            margin: 4px 0;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        
-        .stop-name {
-            margin-bottom: 4px;
-        }
-        
-        .next-stop {
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        /* Форма редактирования остановки */
-        .edit-stop-form {
-            margin-top: 12px;
-            padding: 12px;
-            background: #f5f5f5;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        
-        .edit-stop-form input {
-            width: 100%;
-            padding: 6px;
-            margin: 4px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        
-        .edit-stop-actions {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 8px;
-            gap: 5px;
-        }
-        
-        /* Статусы */
-        .status {
-            font-weight: bold;
-            margin-left: 8px;
-            font-size: 14px;
-        }
-        
-        .status.offline {
-            color: #e74c3c;
-        }
-        
-        .status.on-the-way {
-            color: #f39c12;
-        }
-        
-        .status.boarding {
-            color: #2ecc71;
-        }
-        
-        /* Контейнер для карты */
-        #mapContainer {
-            width: 100%;
-            height: 300px;
-            display: none;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid #ddd;
-            position: relative;
-        }
-        
-        /* Стили для встроенной карты */
-        .google-map-container {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        
-        /* Кнопка закрытия карты — сдвинута влево от встроенного меню карты */
-        .close-map-btn {
-            position: absolute;
-            top: 15px;
-            right: 50px;
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            font-size: 16px;
-            cursor: pointer;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        
-        .close-map-btn:hover {
-            background: #c0392b;
-        }
-        
-        /* Новые стили для календарика и расписания */
-        .calendar-icon {
-            width: 16px;
-            height: 16px;
-            margin-left: 8px;
-            cursor: pointer;
-        }
-        
-        .full-schedule-container {
-            display: none;
-            margin-top: 10px;
-            padding: 10px;
-            background: #f5f5f5;
-            border-radius: 5px;
-        }
-        
-        .hour-block {
-            display: flex;
-            align-items: center;
-            margin-bottom: 5px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .hour-block:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-        
-        .hour-label {
-            background-color: #3498db;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 5px;
-            margin-right: 10px;
-            font-weight: bold;
-            min-width: 40px;
-            text-align: center;
-        }
-        
-        .minutes-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-        
-        .minute-item {
-            padding: 3px 8px;
-            border-radius: 50%;
-            position: relative;
-        }
-        
-        .current-minute {
-            background-color: #3498db;
-            color: white;
-            font-weight: bold;
-        }
-        
-        /* Новые стили для окна остановки */
-        .stop-info-window {
-            margin-top: 15px;
-            background: white;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .stop-info-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .stop-info-subtitle {
-            color: #777;
-            font-size: 12px;
-            margin-bottom: 15px;
-        }
-        
-        .bus-numbers-list {
-            color: #a2c93a;
-            font-size: 14px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .bus-time-container {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-            scrollbar-width: thin;
-            scrollbar-color: #a2c93a #f0f0f0;
-        }
-        
-        .bus-time-container::-webkit-scrollbar {
-            height: 6px;
-        }
-        
-        .bus-time-container::-webkit-scrollbar-track {
-            background: #f0f0f0;
-            border-radius: 3px;
-        }
-        
-        .bus-time-container::-webkit-scrollbar-thumb {
-            background-color: #a2c93a;
-            border-radius: 3px;
-        }
-        
-        .bus-time-item {
-            background-color: #a2c93a;
-            border-radius: 20px;
-            color: white;
-            text-align: center;
-            flex-shrink: 0;
-            padding-left: 8px;
-        }
-        
-        .bus-time-number {
-            font-weight: bold;
-            font-size:14px ;
-            display: flex;
-            align-items: center;
-            margin-top: 1px;
-            padding-right: 10px;
-        }
-        
-        .bus-time-arrival {
-            color: #3ac94b;
-            margin-top: 2px;
-            font-size: 10px;
-            text-align: center;
-        }
-        
-        .arriving-text {
-            color: #3ac94b;
-            font-weight: bold;
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bus Tracker</title>
 
-        .bus-time-block {
-          display: flex;
-          flex-direction: column;
-          margin-bottom: 5px;
-        }
-        
-        /* Медиа-запросы для мобильных устройств */
-        @media (max-width: 480px) {
-            .container {
-                border-radius: 8px;
-            }
-            
-            .app-content, .welcome-screen, .admin-login,
-            .bus-window > .container, .stop-window {
-                padding: 12px;
-            }
-            
-            .welcome-title {
-                font-size: 20px;
-            }
-            
-            .mode-btn {
-                padding: 10px;
-                font-size: 14px;
-            }
-            
-            .app-title {
-                font-size: 16px;
-            }
-            
-            .bus-actions {
-                gap: 4px;
-            }
-            
-            .action-btn {
-                padding: 5px 8px;
-                font-size: 11px;
-            }
-            
-            .route-map .stop .stop-header {
-                padding: 6px;
-                font-size: 13px;
-            }
-            
-            .stop-title {
-                font-size: 15px;
-            }
-            
-            .transport-item {
-                font-size: 13px;
-                padding: 6px;
-            }
-            
-            .action-buttons {
-                gap: 4px;
-            }
-            
-            .action-button {
-                padding: 5px 8px;
-                font-size: 11px;
-            }
-            
-            .full-schedule-title {
-                font-size: 16px;
-                white-space: normal;
-                word-break: break-word;
-            }
-            
-            .stop-info-title {
-                font-size: 16px;
-            }
-            
-            .stop-info-subtitle {
-                font-size: 14px;
-            }
-            
-            .bus-numbers-list {
-                font-size: 12px;
-            }
-        }
-    </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: Arial, sans-serif;
+    }
+
+    h2 {
+      text-align: center;
+      margin: 16px 0;
+    }
+
+    #map {
+      width: 100%;
+      height: calc(100% - 140px); /* подстраивай под высоту других элементов выше карты */
+      margin: 0;
+    }
+
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .vehicle-marker {
+      position: relative;
+      display: flex;
+      align-items: center;
+      user-select: none;
+    }
+
+    .vehicle-drop {
+      position: relative;
+      width: 25px;
+      height: 25px;
+      margin-right: 3px;
+    }
+
+    .vehicle-drop img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 25px;
+      height: 25px;
+    }
+
+    .vehicle-drop img:nth-child(2) {
+      left: -2px;
+      top: -1px;
+    }
+
+    .vehicle-marker__text {
+      display: flex;
+      background: #fff;
+      padding: 0 6px;
+      font-weight: bold;
+      font-size: 16px;
+      color: black;
+      align-items: center;
+      height: 25px;
+      line-height: 25px;
+    }
+
+    #driverPanel {
+      display: none;
+    }
+
+    @media (max-width: 600px) {
+      h2 {
+        font-size: 20px;
+        margin: 12px 0;
+      }
+
+      input, button {
+        font-size: 15px;
+        padding: 12px;
+      }
+
+      .vehicle-marker__text {
+        font-size: 14px;
+        padding: 0 5px;
+        height: 22px;
+        line-height: 22px;
+      }
+
+      .vehicle-drop {
+        width: 22px;
+        height: 22px;
+        margin-right: 2px;
+      }
+
+      .vehicle-drop img {
+        width: 22px;
+        height: 22px;
+      }
+
+      #map {
+        height: calc(100% - 130px);
+      }
+    }
+  </style>
 </head>
 <body>
-    <!-- Экран приветствия -->
-    <div class="container welcome-screen" id="welcomeScreen">
-        <h1 class="welcome-title"><img src="https://cdn2.iconfinder.com/data/icons/travel-set-2/512/18-1024.png" alt="Bus">BusTracker</h1>
-        <p>Система отслеживания автобусов</p>
-        
-        <div class="mode-select">
-            <button class="mode-btn admin-btn" id="adminModeBtn">
-                👓 Режим администратора
-            </button>
-            <button class="mode-btn user-btn" id="userModeBtn">
-                👤 Режим пользователя
-            </button>
-        </div>
-        
-        <div class="admin-login" id="adminLogin">
-            <input type="password" id="adminPassword" placeholder="Введите пароль администратора">
-            <p class="error-msg" id="errorMsg">Неверный пароль!</p>
-            <button class="mode-btn admin-btn" id="loginBtn">Войти</button>
-        </div>
-    </div>
-    
-    <!-- Основное приложение -->
-    <div class="container app-container hidden" id="appContainer">
-        <div class="app-header">
-            <div class="app-title"><img src="https://cdn2.iconfinder.com/data/icons/travel-set-2/512/18-1024.png" alt="Bus">BusTracker</div>
-            <div class="user-badge" id="userBadge">Пользователь</div>
-        </div>
-        
-        <div class="app-content">
-            <div class="search-container">
-                <div class="search-input-container">
-                    <input id="searchInput" class="search-input" type="text" placeholder="Поиск остановки или автобуса">
-                    <div id="searchResults" class="search-results"></div>
-                </div>
-            </div>
-            
-            <!-- Контейнер для карты -->
-            <div id="mapContainer">
-                <button class="close-map-btn" onclick="closeMap()">×</button>
-                <iframe class="google-map-container" src="https://www.google.com/maps/d/u/0/embed?mid=1Hkdu4NCMJT7F6vjyQJ7cXEsxMuARRhU&ehbc=2E312F&hl=ru&ui=0&zoom=1"></iframe>
-            </div>
-            
-            <button class="mode-btn" id="showStopsBtn" style="margin-top: 10px; background-color: #9b59b6; color: white;">Показать все остановки</button>
-            <button class="mode-btn" style="margin-top: 10px; background-color: #9b59b6; color: white;">Показать на карте</button>
-            
-            <!-- Контейнер для списка остановок -->
-            <div id="stopsListContainer" class="hidden" style="margin-top: 15px;">
-                <div id="stopsList" class="bus-list"></div>
-            </div>
-            
-            <div id="stopInfoContainer">
-                <div id="stopInfoWindow" class="stop-window"></div>
-            </div>
-            
-            <div id="adminPanel" class="hidden">
-                <input id="busNumber" type="text" placeholder="Номер автобуса" class="add-stop-container">
-                <button class="action-btn admin-action" id="addBusBtn">➕ Добавить автобус</button>
-            </div>
-            
-            <h3><img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="20" height="20" style="margin-right: 6px; position: relative; top: 3px;">Автобусы</h3>
-            <div id="busList" class="bus-list"></div>
-        </div>
-    </div>
-    
-    <button class="mode-switch-btn hidden" id="modeSwitchBtn">Сменить режим</button>
 
-    <script>
-        // Глобальные переменные
-        let buses = JSON.parse(localStorage.getItem("buses")) || {};
-        let currentStop = localStorage.getItem("currentStop") || null;
-        let updateInterval;
-        let isAdminMode = false;
-        const ADMIN_PASSWORD = "123654789"; // Пароль администратора
-        let busMarkers = {}; // Для хранения маркеров автобусов
-        let busPositions = {}; // Для хранения текущих позиций автобусов
-        
-        // DOM элементы
-        const welcomeScreen = document.getElementById('welcomeScreen');
-        const appContainer = document.getElementById('appContainer');
-        const adminModeBtn = document.getElementById('adminModeBtn');
-        const userModeBtn = document.getElementById('userModeBtn');
-        const adminLogin = document.getElementById('adminLogin');
-        const adminPassword = document.getElementById('adminPassword');
-        const errorMsg = document.getElementById('errorMsg');
-        const loginBtn = document.getElementById('loginBtn');
-        const userBadge = document.getElementById('userBadge');
-        const adminPanel = document.getElementById('adminPanel');
-        const searchInput = document.getElementById('searchInput');
-        const searchResults = document.getElementById('searchResults');
-        const busNumberInput = document.getElementById('busNumber');
-        const addBusBtn = document.getElementById('addBusBtn');
-        const busList = document.getElementById('busList');
-        const stopInfoWindow = document.getElementById('stopInfoWindow');
-        const modeSwitchBtn = document.getElementById('modeSwitchBtn');
-        const mapContainer = document.getElementById('mapContainer');
-        const showStopsBtn = document.getElementById('showStopsBtn');
-        const stopsListContainer = document.getElementById('stopsListContainer');
-        const stopsList = document.getElementById('stopsList');
-        
-        // Инициализация при загрузке
-        document.addEventListener('DOMContentLoaded', function() {
-            // Обработчики событий для экрана приветствия
-            adminModeBtn.addEventListener('click', showAdminLogin);
-            userModeBtn.addEventListener('click', startUserMode);
-            loginBtn.addEventListener('click', checkAdminPassword);
-            
-            // Обработчики событий для основного приложения
-            searchInput.addEventListener('input', handleSearchInput);
-            addBusBtn.addEventListener('click', addBus);
-            modeSwitchBtn.addEventListener('click', switchMode);
-            showStopsBtn.addEventListener('click', toggleStopsList);
-            
-            // Восстанавливаем состояние приложения
-            if (localStorage.getItem('appState') === 'active') {
-                const mode = localStorage.getItem('mode') || 'user';
-                if (mode === 'admin') {
-                    startAdminMode();
-                } else {
-                    startUserMode();
-                }
-            }
-            
-            // Автообновление страницы каждую минуту
-            setInterval(function() {
-                if (appContainer.classList.contains('hidden')) return;
-                
-                // Обновляем только нужные части интерфейса
-                if (currentStop) {
-                    showStopInfo(currentStop, true);
-                }
-                
-                // Обновляем маркеры всех автобусов
-                for (let busNumber in buses) {
-                    updateBusMarkerPosition(busNumber);
-                    
-                    // Обновляем открытые окна
-                    let busWindow = document.getElementById(`bus-window-${busNumber}`);
-                    if (busWindow && busWindow.style.display === 'block') {
-                        if (busWindow.innerHTML.includes("Схема маршрута")) {
-                            showRouteMap(busNumber);
-                        } else if (busWindow.innerHTML.includes("Расписание")) {
-                            showSchedule(busNumber);
-                        } else if (busWindow.innerHTML.includes("Полное расписание")) {
-                            showFullSchedule(busNumber);
-                        }
-                    }
-                }
-            }, 15000); // 15 секунд 
-        });
+<h2>Bus Tracker</h2>
 
-const routesData = {
-  "9": { "Автопарк": ["14:29"] },
-  "18": { "Автопарк": ["14:29"] },
-  "34": { "Автопарк": ["05:50", "06:28", "06:33", "07:13", "07:21", "07:42", "08:21", "08:27", "08:59", "09:08", "09:41", "10:19", "10:31", "11:07", "11:13", "11:50", "12:00", "14:30", "15:03", "15:15", "15:47", "15:57", "16:31", "16:40", "17:13", "17:24", "17:59", "18:07", "18:38", "18:50", "19:24", "19:33"] },
-  "77": {
-    "Автопарк": ["05:50", "08:00", "09:30", "18:20", "19:40"],
-    "п.Октябрьский": ["05:52", "08:02", "09:32", "18:22", "19:42"],
-    "Спортивный комплекс": ["05:54", "08:04", "09:34", "18:24", "19:44"],
-    "Школа": ["05:56", "08:06", "09:36", "18:26", "19:46"],
-    "Центральный парк": ["05:57", "08:07", "09:37", "18:27", "19:47"],
-    "Областной театр драмы": ["05:58", "08:08", "09:38", "18:28", "19:48"],
-    "Монумент Победы": ["06:00", "08:10", "09:40", "18:30", "19:50"],
-    "ГСК \"Центральный\"": ["06:02", "08:12", "09:42", "18:32", "19:52"],
-    "Ул.Гоголя": ["06:04", "08:14", "09:44", "18:34", "19:54"],
-    "Ул.Техническая": ["06:06", "08:16", "09:46", "18:36", "19:56"],
-    "Автопарк (приб.)": ["06:07", "08:17", "09:47", "18:37", "19:57"]
-  },
-  "67а": { "Автопарк": ["14:29"] },
-  "77А": {
-    "Автопарк": ["06:00", "08:00", "09:30", "18:20", "19:40"],
-    "п.Октябрьский": ["06:02", "08:02", "09:32", "18:22", "19:42"],
-    "Ул.Гоголя": ["06:04", "08:04", "09:34", "18:24", "19:44"],
-    "Ул.Байзакова": ["06:09", "08:09", "09:39", "18:29", "19:49"],
-    "Монумент Победы": ["06:10", "08:10", "09:40", "18:30", "19:50"],
-    "Спортивный комплекс": ["06:12", "08:12", "09:42", "18:32", "19:52"],
-    "Областной театр драмы": ["06:14", "08:14", "09:44", "18:34", "19:54"],
-    "Ул.Техническая": ["06:16", "08:16", "09:46", "18:36", "19:56"],
-    "Автопарк (приб.)": ["06:17", "08:17", "09:47", "18:37", "19:57"]
-  },
-  "351": {
-    "Автопарк": ["06:00", "08:18", "18:25", "19:55"],
-    "По требованию": ["06:01", "08:17", "18:26", "19:54"],
-    "Тургенева": ["06:02", "08:16", "18:27", "19:53"],
-    "Центральный парк": ["06:03", "08:15", "18:28", "19:52"],
-    "Овощебаза": ["06:04", "08:14", "18:29", "19:51"],
-    "Спортивный комлекс": ["06:05", "08:13", "18:30", "19:50"],
-    "Дачи Солнечные": ["06:15", "08:03", "18:40", "19:40"]
+<div id="loginPanel">
+  <input type="password" id="pinInput" placeholder="Введите PIN" />
+  <button onclick="login()">Войти</button>
+</div>
+
+<div id="driverPanel">
+  <input type="text" id="routeInput" placeholder="Номер маршрута" />
+  <button id="startStopBtn" onclick="toggleTracking()">Начать смену</button>
+  <button id="changeRouteBtn" onclick="changeRoute()">Поменять маршрут</button>
+</div>
+
+<div id="map"></div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBc-x0sFbt16lzmMx77dLwysXGJUOsXKsY",
+    authDomain: "bustrackerweb.firebaseapp.com",
+    projectId: "bustrackerweb",
+    storageBucket: "bustrackerweb.appspot.com",
+    messagingSenderId: "325393024111",
+    appId: "1:325393024111:web:d78728eb97180a03aeb99a",
+    measurementId: "G-TRVJFYPJXZ",
+    databaseURL: "https://bustrackerweb-default-rtdb.europe-west1.firebasedatabase.app"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  let currentDriver = null;
+  let watchId = null;
+  let prevPosition = null;
+  const busMarkers = {};
+
+  const map = L.map('map').setView([50.20232, 81.72463], 16);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+
+  function calculateAngle(p1, p2) {
+    const lat1 = p1.lat * Math.PI / 180;
+    const lat2 = p2.lat * Math.PI / 180;
+    const dLon = (p2.lng - p1.lng) * Math.PI / 180;
+
+    const y = Math.sin(dLon) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+    let brng = Math.atan2(y, x) * 180 / Math.PI;
+
+    return (brng + 360) % 360;
   }
-};
+  const stopIcon = L.icon({
+    iconUrl: "https://oskemenbus.kz/assets/images/map-icons/stop-icons/city_transport_stop.svg",
+    iconSize: [32, 32],       // можно изменить под размер иконки
+    iconAnchor: [16, 16],     // центр иконки будет в точке
+  });
+  const stops = [
+    { lat: 50.19912, lng: 81.72813, name: "п.Октябрьский" },
+    { lat: 50.19899, lng: 81.72786, name: "п.Октябрьский" },
+    { lat: 50.20026, lng: 81.72846, name: "Перекрёсток" },
+    { lat: 50.2005, lng: 81.72830, name: "Перекрёсток" },
+    { lat: 50.20185, lng: 81.72890, name: "Ул.Коммунальная" },
+    { lat: 50.20189, lng: 81.72870, name: "Ул.Коммунальная" },
+    { lat: 50.20308, lng: 81.72853, name: "Спортивный комплекс" },
+    { lat: 50.20297, lng: 81.72827, name: "Спортивный комплекс" },
+    { lat: 50.20317, lng: 81.72743, name: "ГСК \"Центральный\"" },
+    { lat: 50.20307, lng: 81.72729, name: "ГСК \"Центральный\"" },
+    { lat: 50.20261, lng: 81.72557, name: "Овощебаза" },
+    { lat: 50.20244, lng: 81.72580, name: "Овощебаза" },
+    { lat: 50.2012, lng: 81.72543, name: "Ул.Центральная" },
+    { lat: 50.20109, lng: 81.72518, name: "Ул.Центральная" },
+    { lat: 50.20088, lng: 81.72464, name: "Акимат" },
+    { lat: 50.20102, lng: 81.72336, name: "Школа" },
+    { lat: 50.20048, lng: 81.72520, name: "Центральный парк" },
+    { lat: 50.20045, lng: 81.72494, name: "Центральный парк" },
+    { lat: 50.19963, lng: 81.72499, name: "Ул.Машиностроителей" },
+    { lat: 50.19973, lng: 81.72466, name: "Ул.Машиностроителей" },
+    { lat: 50.19939, lng: 81.72401, name: "Узел связи" },
+    { lat: 50.19920, lng: 81.7238, name: "Узел связи" },
+    { lat: 50.19903, lng: 81.72452, name: "Областной театр драмы" },
+    { lat: 50.19894, lng: 81.72482, name: "Областной театр драмы" },
+    { lat: 50.19842, lng: 81.72433, name: "Тургенева" },
+    { lat: 50.19836, lng: 81.7246, name: "Тургенева" },
+    { lat: 50.19765, lng: 81.72442, name: "По требованию" },
+    { lat: 50.19757, lng: 81.72533, name: "Ул.Грейдерная" }, 
+    { lat: 50.1975, lng: 81.72512, name: "Ул.Грейдерная" },
+    { lat: 50.19744, lng: 81.72624, name: "Ул.Байзакова" },
+    { lat: 50.19734, lng: 81.7265, name: "Ул.Грейдерная" },     
+    { lat: 50.19745, lng: 81.72765, name: "Поворот" },
+    { lat: 50.19742, lng: 81.72893, name: "По требованию" }, 
+    { lat: 50.1979, lng: 81.72920, name: "Ул.Техническая" },
+    { lat: 50.19802, lng: 81.72901, name: "Ул.Техническая" },
+    { lat: 50.19844, lng: 81.72933, name: "Ул.Магистральная" },
+    { lat: 50.1985, lng: 81.7291 , name: "Ул.Магистральная" },
+    { lat: 50.20146, lng: 81.73030, name: "Ул.Садовая" },
+    { lat: 50.20148, lng: 81.73006, name: "Ул.Садовая" },
+    { lat: 50.20242, lng: 81.73075, name: "Ул.Гоголя" },
+    { lat: 50.20298, lng: 81.72194, name: "Ул.Шевченко" },
+    { lat: 50.20284, lng: 81.7198, name: "Ул.Нагорная" },
+    { lat: 50.20003, lng: 81.72137, name:  "Монумент \"Победы\"" },
+    { lat: 50.19893, lng: 81.72854, name: "Автопарк" },
+    { lat: 50.19878, lng: 81.72859, name: "Автопарк" },
+    { lat: 50.19864, lng: 81.7287, name: "Автопарк (приб.)" },
+    { lat: 50.19078, lng: 81.73204, name: "Мост" },
+    { lat: 50.19074, lng: 81.73173, name: "Мост" },
+    { lat: 50.18728, lng: 81.73705, name: "о.п Узын агаш" },
+    { lat: 50.18723, lng: 81.73680, name: "о.п Узын агаш" },
+    { lat: 50.18611, lng: 81.74317, name: "Казахстан" },
+    { lat: 50.18621, lng: 81.743, name: "Казахстан" },
+    { lat: 50.18794, lng: 81.74566, name: "Сарыарка" },
+    { lat: 50.18814, lng: 81.74561, name: "Сарыарка" },
+    { lat: 50.19121, lng: 81.74962, name: "Водоканал" },
+    { lat: 50.19144, lng: 81.74969, name: "Водоканал" },
+    { lat: 50.19388, lng: 81.75294, name: "ГМК" },
+    { lat: 50.19398, lng: 81.75268, name: "ГМК" },
+    { lat: 50.19669, lng: 81.75637, name: "о.п Жайлау" },
+    { lat: 50.19716, lng: 81.75648, name: "о.п Жайлау" },
+    { lat: 50.20106, lng: 81.76189, name: "о.п Уш терек" },
+    { lat: 50.20135, lng: 81.76164, name: "о.п Уш терек" },
+    { lat: 50.2085, lng: 81.76724, name: "о.п Жазык" },
+    { lat: 50.20862, lng: 81.76692, name: "о.п Жазык" },
+    { lat: 50.21528, lng: 81.76793, name: "о.п Тарбагатай" },
+    { lat: 50.21524, lng: 81.76763, name: "о.п Тарбагатай" },
+    { lat: 50.22112, lng: 81.76188, name: "По требованию" },
+    { lat: 50.22139, lng: 81.7589, name: "Магазин \"Арман\"" },
+    { lat: 50.20026, lng: 81.72723, name: "По требованию" },
+    { lat: 50.20047, lng: 81.72644, name: "Сейфуллина" },
+    { lat: 50.20034, lng: 81.72628, name: "Сейфуллина" },
+    { lat: 50.19944, lng: 81.72822, name: "Ул.Амре Кашаубаева" },  
+    { lat: 50.19925, lng: 81.72792, name: "Ул.Амре Кашаубаева" },  
+  ];
+  stops.forEach(stop => {
+  L.marker([stop.lat, stop.lng], { icon: stopIcon })
+    .addTo(map)
+    .bindPopup(stop.name);
+});
+  function createBusMarker(route, angle = 0) {
+    const html = `
+      <div class="vehicle-marker">
+        <div class="vehicle-drop">
+          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/background/bus.svg" alt="bg" style="transform: rotate(${(angle + 180) % 360}deg); transition: transform 0.5s;">
+          <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" alt="icon">
+        </div>
+        <div class="vehicle-marker__text">
+          <span>${route ?? ''}</span>
+        </div>
+      </div>
+    `;
+    return L.divIcon({
+      html,
+      className: "",
+      iconSize: [90, 25],
+      iconAnchor: [45, 12]
+    });
+  }
 
-localStorage.setItem("buses", JSON.stringify(routesData));
-        // Функции экрана приветствия
-        function showAdminLogin() {
-            adminLogin.style.display = 'block';
-            adminModeBtn.style.display = 'none';
-            userModeBtn.style.display = 'none';
-        }
-        
-        function checkAdminPassword() {
-            if (adminPassword.value === ADMIN_PASSWORD) {
-                startAdminMode();
-            } else {
-                errorMsg.style.display = 'block';
-            }
-        }
-        
-        function startAdminMode() {
-            isAdminMode = true;
-            userBadge.textContent = 'Администратор';
-            adminPanel.classList.remove('hidden');
-            initializeApp();
-        }
-        
-        function startUserMode() {
-            isAdminMode = false;
-            userBadge.textContent = 'Пользователь';
-            adminPanel.classList.add('hidden');
-            initializeApp();
-        }
-        
-        function initializeApp() {
-            welcomeScreen.style.display = 'none';
-            appContainer.classList.remove('hidden');
-            modeSwitchBtn.classList.remove('hidden');
-            
-            localStorage.setItem('appState', 'active');
-            localStorage.setItem('mode', isAdminMode ? 'admin' : 'user');
-            
-            renderBusList();
-            setupSearch();
-            
-            // Восстанавливаем открытое окно остановки
-            if (currentStop) {
-                showStopInfo(currentStop, true);
-            }
-            
-            // Запускаем обновление информации каждую секунду
-            startUpdateInterval();
-        }
-        
-        // Основные функции приложения
-        function saveData() {
-            localStorage.setItem("buses", JSON.stringify(buses));
-        }
-        
-        function handleSearchInput() {
-            const query = this.value.toLowerCase().trim();
-            searchResults.innerHTML = '';
-            
-            if (query.length < 2) {
-                searchResults.style.display = 'none';
-                return;
-            }
-            
-            performSearch();
-        }
-        
-        function performSearch() {
-            const query = searchInput.value.toLowerCase().trim();
-            searchResults.innerHTML = '';
-            
-            if (query.length < 1) {
-                searchResults.style.display = 'none';
-                return;
-            }
-            
-            // Поиск автобусов
-            const busMatches = Object.keys(buses).filter(
-                bus => bus.toLowerCase().includes(query)
-            ).sort((a, b) => parseInt(a) - parseInt(b)); // Сортировка номеров автобусов по возрастанию
-            
-            // Поиск остановок
-            let stopMatches = [];
-            for (let bus in buses) {
-                for (let stop in buses[bus]) {
-                    if (stop.toLowerCase().includes(query) && !stopMatches.includes(stop)) {
-                        stopMatches.push(stop);
-                    }
-                }
-            }
-            
-            if (busMatches.length === 0 && stopMatches.length === 0) {
-                searchResults.innerHTML = `<div class="not-found">Ничего не найдено по вашему запросу</div>`;
-            } else {
-                // Добавляем найденные автобусы
-                busMatches.forEach(bus => {
-                    const item = document.createElement('div');
-                    item.className = 'search-item';
-                    item.innerHTML = `<img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="16" height="16" style="margin-right: 6px;"> ${bus}`;
-                    item.onclick = () => {
-                        showRouteMap(bus);
-                        document.getElementById(`bus-window-${bus}`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        
-                        searchResults.style.display = 'none';
-                    };
-                    searchResults.appendChild(item);
-                });
-                
-                // Добавляем найденные остановки
-                stopMatches.forEach(stop => {
-                    const item = document.createElement('div');
-                    item.className = 'search-item';
-                    item.innerHTML = `<img src="https://oskemenbus.kz/assets/images/map-icons/stop-icons/city_transport_stop.svg" width="40" height="40" style="margin-right: 6px;">${escapeHtml(stop)}`;
-                    item.onclick = () => {
-                        showStopInfo(stop);
-                        searchResults.style.display = 'none';
-                    };
-                    searchResults.appendChild(item);
-                });
-            }
-            
-            searchResults.style.display = 'block';
-        }
-        
-        function escapeHtml(unsafe) {
-            return unsafe
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/'/g, "&#039;");
-        }
+  function updateRouteText(marker, route) {
+    const textSpan = marker.getElement().querySelector('.vehicle-marker__text span');
+    if (textSpan) textSpan.textContent = route ?? '';
+  }
 
-        function safeAttrValue(value) {
-            return value
-                .replace(/"/g, '&quot;')  // Заменяем кавычки на HTML-сущность
-                .replace(/'/g, '&#039;');
-        }      
-        
-        function setupSearch() {
-            // Скрываем результаты при клике вне поля поиска
-            document.addEventListener('click', function(e) {
-                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                    searchResults.style.display = 'none';
-                }
-            });
-        }
-        
-        function addBus() {
-            let busNumber = busNumberInput.value.trim();
-            if (busNumber && !buses[busNumber]) {
-                buses[busNumber] = {};
-                saveData();
-                renderBusList();
-                busNumberInput.value = "";
-            } else if (buses[busNumber]) {
-                alert("Автобус с таким номером уже существует!");
-            }
-        }
-        
-        function renderBusList() {
-            busList.innerHTML = "";
+  function animateMarker(marker, fromLatLng, toLatLng, duration = 1000) {
+    const startTime = performance.now();
 
-            if (Object.keys(buses).length === 0) {
-                busList.innerHTML = "<p>Нет добавленных автобусов</p>";
-                return;
-            }
+    function animate(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
 
-            // Сортируем автобусы по номеру
-            let sortedBusNumbers = Object.keys(buses).sort((a, b) => parseInt(a) - parseInt(b));
+      const lat = fromLatLng.lat + (toLatLng.lat - fromLatLng.lat) * progress;
+      const lng = fromLatLng.lng + (toLatLng.lng - fromLatLng.lng) * progress;
+      marker.setLatLng([lat, lng]);
 
-            for (let bus of sortedBusNumbers) {
-                let div = document.createElement("div");
-                div.className = "bus-list-item";
-                div.innerHTML = `
-                    <div class="bus-item">
-                        <div class="bus-header">
-                            <div class="bus-number-container">
-                                <div class="bus-number">
-                                    <img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" alt="Bus">
-                                    ${escapeHtml(bus)}
-                                </div>
-                            </div>
-                            <div class="bus-actions">
-                                ${isAdminMode ? `
-                                    <button class="action-btn admin-action" onclick="openAddStopWindow('${bus}')">Добавить остановку</button>
-                                    <button class="action-btn admin-action" onclick="editBusSchedule('${bus}')">Редактировать</button>
-                                    <button class="action-btn danger-action" onclick="deleteBus('${bus}')">Удалить</button>
-                                ` : ''}
-                                <button class="action-btn" onclick="showRouteMap('${bus}')">Маршрут</button>
-                                <button class="action-btn" onclick="showSchedule('${bus}')">Расписание</button>
-                                <button class="action-btn" onclick="showFullSchedule('${bus}')">Полное расписание</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bus-window" id="bus-window-${bus}"></div>
-                `;
-                busList.appendChild(div);
-            }
-        }
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    }
 
-        // Функция для показа автобуса на карте
-        function showBusOnMap(busNumber) {
-            // Показываем контейнер карты
-            mapContainer.style.display = 'block';
-            
-            // Прокручиваем к карте
-            mapContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-        
-        // Функция закрытия карты
-        function closeMap() {
-            mapContainer.style.display = 'none';
-        }
-        
-        function deleteBus(busNumber) {
-            if (confirm(`Вы уверены, что хотите удалить автобус ${busNumber} и все его данные?`)) {
-                delete buses[busNumber];
-                saveData();
-                renderBusList();
-                
-                // Закрываем окно этого автобуса, если оно открыто
-                document.getElementById(`bus-window-${busNumber}`).style.display = 'none';
-                document.getElementById(`bus-window-${busNumber}`).innerHTML = '';
-            }
-        }
-        
-        function openAddStopWindow(busNumber) {
-            let busWindow = document.getElementById(`bus-window-${busNumber}`);
-            
-            busWindow.innerHTML = `
-                <div class="container">
-                    <h3>Добавить остановку для автобуса ${busNumber}</h3>
-                    <div class="add-stop-container">
-                        <input type="text" id="stopName-${busNumber}" placeholder="Название остановки">
-                        <input type="text" id="stopTimes-${busNumber}" placeholder="Время (формат: 08:00,12:30,18:15)">
-                    </div>
-                    <div class="action-buttons">
-                        <button class="action-btn admin-action" onclick="addStopToBus('${busNumber}')">Добавить</button>
-                        <button class="action-btn" onclick="closeBusWindow('${busNumber}')">Отмена</button>
-                    </div>
-                </div>
-            `;
-            busWindow.style.display = 'block';
-        }
-        
-        function addStopToBus(busNumber) {
-            let stopName = document.getElementById(`stopName-${busNumber}`).value.trim();
-            let stopTimes = document.getElementById(`stopTimes-${busNumber}`).value.trim();
-            
-            if (!stopName || !stopTimes) {
-                alert("Пожалуйста, заполните все поля!");
-                return;
-            }
-            
-            // Преобразуем строку времени в массив
-            let timesArray = stopTimes.split(',').map(time => time.trim()).filter(time => time);
-            
-            // Проверяем формат времени
-            let timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-            for (let time of timesArray) {
-                if (!timeRegex.test(time)) {
-                    alert(`Неправильный формат времени: ${time}. Используйте формат ЧЧ:MM`);
-                    return;
-                }
-            }
-            
-            // Добавляем остановку
-            buses[busNumber][stopName] = timesArray;
-            saveData();
-            
-            // Закрываем окно и обновляем список
-            closeBusWindow(busNumber);
-            renderBusList();
-            renderStopsList(); // Обновляем список остановок
-        }
-        
-        function editBusSchedule(busNumber) {
-            let busWindow = document.getElementById(`bus-window-${busNumber}`);
-            
-            if (!buses[busNumber] || Object.keys(buses[busNumber]).length === 0) {
-                busWindow.innerHTML = `
-                    <div class="container">
-                        <p>Для этого автобуса нет добавленных остановок.</p>
-                        <button class="action-btn" onclick="closeBusWindow('${busNumber}')">Закрыть</button>
-                    </div>
-                `;
-                busWindow.style.display = 'block';
-                return;
-            }
-            
-            let stopsHTML = Object.keys(buses[busNumber]).map(stop => {
-                return `
-                    <div class="stop-item">
-                        <div class="stop-name">${escapeHtml(stop)}</div>
-                        <div class="stop-times">${buses[busNumber][stop].join(', ')}</div>
-                        <div class="edit-stop-actions">
-                            <button class="action-btn admin-action" onclick="editStop('${busNumber}', '${escapeHtml(stop)}')">Редактировать</button>
-                            <button class="action-btn danger-action" onclick="deleteStop('${busNumber}', '${escapeHtml(stop)}')">Удалить</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            busWindow.innerHTML = `
-                <div class="container">
-                    <h3>Редактирование расписания автобуса ${busNumber}</h3>
-                    <div class="edit-bus-form">
-                        <input type="text" id="editBusNumber" value="${escapeHtml(busNumber)}" placeholder="Новый номер автобуса">
-                        <input type="text" id="editBusName" placeholder="Название автобуса (необязательно)">
-                    </div>
-                    ${stopsHTML}
-                    <div class="action-buttons">
-                        <button class="action-btn admin-action" onclick="saveBusChanges('${busNumber}')">Сохранить изменения</button>
-                        <button class="action-btn" onclick="closeBusWindow('${busNumber}')">Закрыть</button>
-                    </div>
-                </div>
-            `;
-            busWindow.style.display = 'block';
-        }
-        
-        function saveBusChanges(oldBusNumber) {
-            let newBusNumber = document.getElementById('editBusNumber').value.trim();
-            let busName = document.getElementById('editBusName').value.trim();
-            
-            if (!newBusNumber) {
-                alert("Пожалуйста, укажите номер автобуса!");
-                return;
-            }
-            
-            if (newBusNumber !== oldBusNumber && buses[newBusNumber]) {
-                alert("Автобус с таким номером уже существует!");
-                return;
-            }
-            
-            // Сохраняем данные автобуса
-            if (newBusNumber !== oldBusNumber) {
-                buses[newBusNumber] = buses[oldBusNumber];
-                delete buses[oldBusNumber];
-            }
-            
-            // Сохраняем название автобуса, если указано
-            if (busName) {
-                buses[newBusNumber]._name = busName;
-            }
-            
-            saveData();
-            renderBusList();
-            closeBusWindow(newBusNumber);
-        }
-        
-        function editStop(busNumber, stopName) {
-            let busWindow = document.getElementById(`bus-window-${busNumber}`);
-            
-            busWindow.innerHTML = `
-                <div class="container">
-                    <h3>Редактирование остановки "${stopName}"</h3>
-                    <div class="edit-stop-form">
-                        <input type="text" id="editStopName-${busNumber}" value="${escapeHtml(stopName)}" placeholder="Название остановки">
-                        <input type="text" id="editStopTimes-${busNumber}" value="${buses[busNumber][stopName].join(', ')}" placeholder="Время (формат: 08:00,12:30,18:15)">
-                        <div class="edit-stop-actions">
-                            <button class="action-btn admin-action" onclick="saveStopChanges('${busNumber}', '${escapeHtml(stopName)}')">Сохранить</button>
-                            <button class="action-btn" onclick="editBusSchedule('${busNumber}')">Отмена</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            busWindow.style.display = 'block';
-        }
-        
-        function saveStopChanges(busNumber, oldStopName) {
-            let newStopName = document.getElementById(`editStopName-${busNumber}`).value.trim();
-            let stopTimes = document.getElementById(`editStopTimes-${busNumber}`).value.trim();
-            
-            if (!newStopName || !stopTimes) {
-                alert("Пожалуйста, заполните все поля!");
-                return;
-            }
-            
-            // Преобразуем строку времени в массив
-            let timesArray = stopTimes.split(',').map(time => time.trim()).filter(time => time);
-            
-            // Проверяем формат времени
-            let timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-            for (let time of timesArray) {
-                if (!timeRegex.test(time)) {
-                    alert(`Неправильный формат времени: ${time}. Используйте формат ЧЧ:MM`);
-                    return;
-                }
-            }
-            
-            // Удаляем старую остановку, если имя изменилось
-            if (oldStopName !== newStopName) {
-                delete buses[busNumber][oldStopName];
-            }
-            
-            // Добавляем/обновляем остановку
-            buses[busNumber][newStopName] = timesArray;
-            saveData();
-            
-            // Возвращаемся к списку остановок
-            editBusSchedule(busNumber);
-            renderStopsList(); // Обновляем список остановок
-        }
-        
-        function deleteStop(busNumber, stopName) {
-            if (confirm(`Вы уверены, что хотите удалить остановку "${stopName}" из маршрута автобуса ${busNumber}?`)) {
-                delete buses[busNumber][stopName];
-                saveData();
-                editBusSchedule(busNumber);
-                renderStopsList(); // Обновляем список остановок
-            }
-        }
-        
-        function showRouteMap(busNumber) {
-            searchResults.style.display = 'none';
-            let busWindow = document.getElementById(`bus-window-${busNumber}`);
-            
-            // Закрываем все другие окна
-            document.querySelectorAll('.bus-window').forEach(window => {
-                if (window.id !== `bus-window-${busNumber}`) {
-                    window.style.display = 'none';
-                    window.innerHTML = '';
-                }
-            });
-            
-            let stops = Object.keys(buses[busNumber]);
-            if (stops.length === 0) {
-                busWindow.innerHTML = `
-                    <div class="container">
-                        <p>Для этого автобуса нет добавленных остановок.</p>
-                        <button class="action-btn" onclick="closeBusWindow('${busNumber}')">Закрыть</button>
-                    </div>
-                `;
-                busWindow.style.display = 'block';
-                return;
-            }
-            
-            let firstStop = stops[0];
-            let lastStop = stops[stops.length - 1];
-            
-            let routeMapHTML = stops.map((stop, index) => {
-                // Проверяем, идет ли посадка на этой остановке
-                let now = new Date();
-                let currentTime = now.getHours() * 60 + now.getMinutes();
-                let isBoarding = false;
-                
-                if (buses[busNumber][stop]) {
-                    for (let time of buses[busNumber][stop]) {
-                        let [hours, minutes] = time.split(":").map(Number);
-                        let timeInMinutes = hours * 60 + minutes;
-                        if (currentTime >= timeInMinutes && currentTime < timeInMinutes + 1) {
-                            isBoarding = true;
-                            break;
-                        }
-                    }
-                }
-                
-                let boardingStatus = isBoarding ? '<span class="boarding-status">Идет посадка</span>' : '';
-                
-                // Получаем ближайшие 2 времени прибытия
-                let nextTimes = [];
-                if (buses[busNumber][stop]) {
-                    let times = buses[busNumber][stop].map(time => {
-                        let [hours, minutes] = time.split(":").map(Number);
-                        return hours * 60 + minutes;
-                    }).sort((a, b) => a - b);
-                    
-                    // Находим ближайшие времена
-                    for (let time of times) {
-                        let remainingTime = time - currentTime;
-                        if (remainingTime < 0) remainingTime += 1440; // Добавляем сутки, если время уже прошло
-                        nextTimes.push(remainingTime);
-                    }
-                    
-                    // Сортируем по времени до прибытия
-                    nextTimes.sort((a, b) => a - b);
-                    
-                    // Берем два ближайших времени
-                    nextTimes = nextTimes.slice(0, 2);
-                }
-                
-                // Форматируем время для отображения
-                let timeDisplay = nextTimes.map(time => {
-                    if (time === 0) return 'Прибывает';
-                    if (time === 1) return '<1 мин';
-                    if (time >= 60) {
-                        let hours = Math.floor(time / 60);
-                        let mins = time % 60;
-                        return `${hours}ч ${mins}м`;
-                    }
-                    return `${time} мин`;
-                }).join(', ');
+    requestAnimationFrame(animate);
+  }
 
-                function escapeForAttribute(value) {
-                    return value.replace(/"/g, '\\"');  // Экранируем только для атрибутов
-                }
-                
-                let stopHTML = `
-                    <div class="stop" id="stop-${busNumber}-${index}">
-                        <div class="stop-header" data-stop-name="${stop}">
-                            <div class="circle"></div>
-                            <div>
-                                <div class="${stop === firstStop || stop === lastStop ? 'bold' : ''}">
-                                    ${escapeHtml(stop)} ${boardingStatus}
-                                </div>
-                                <div class="stop-time-info">${timeDisplay || 'Нет данных'}</div>
-                            </div>
-                            <div class="arrow-right">
-                                <img src="https://cdn-icons-png.flaticon.com/512/3652/3652191.png" 
-                                     class="calendar-icon" 
-                                     data-bus-number="${busNumber}"
-                                     data-stop-name="${safeAttrValue(stop)}">
-                            </div>
-                        </div>
-                        <div class="full-schedule-container" id="schedule-${busNumber}-${index}"></div>
-                    </div>
-                `;
-                return stopHTML;
-            }).join("");
+  function animateRotation(marker, fromAngle, toAngle, duration = 500) {
+    const bgImg = marker.getElement().querySelector('img[alt="bg"]');
+    if (!bgImg) return;
 
-            busWindow.innerHTML = `
-                <div class="container">
-                    <h4><img src="https://cdn3.iconfinder.com/data/icons/maps-and-pins-4/512/map_pin_destination_location_adress_bus_stop-1024.png" width="18" height="18"> Схема маршрута автобуса ${escapeHtml(busNumber)}</h4>
-                    <div class="route-map">
-                        ${routeMapHTML}
-                    </div>
-                    <button class="action-btn" onclick="closeBusWindow('${busNumber}')">Закрыть</button>
-                </div>
-            `;
+    const startTime = performance.now();
 
-            document.querySelectorAll('.stop-header').forEach(header => {
-                header.addEventListener('click', function() {
-                    const stopName = this.dataset.stopName;
-                    showStopInfo(stopName);
-                    stopInfoWindow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                });
-            });
-            
-            document.querySelectorAll('.calendar-icon').forEach(icon => {
-                icon.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const busNumber = this.dataset.busNumber;
-                    const stopName = this.dataset.stopName;
-                    showFullScheduleForStop(busNumber, stopName, e);
-                });
-            });
-            
-            busWindow.style.display = 'block';
-            
-            // Добавляем маркер автобуса и обновляем его позицию
-            updateBusMarkerPosition(busNumber);
+    function animate(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      const delta = ((((toAngle - fromAngle + 540) % 360) - 180) + 360) % 360;
+      const currentAngle = (fromAngle + delta * progress) % 360;
+
+      bgImg.style.transform = `rotate(${(currentAngle + 180) % 360}deg)`;
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  function login() {
+    const pin = document.getElementById("pinInput").value;
+    db.ref("drivers").orderByChild("pin").equalTo(pin).once("value", snap => {
+      if (snap.exists()) {
+        const driverId = Object.keys(snap.val())[0];
+        currentDriver = driverId;
+        const driverData = snap.val()[driverId];
+
+        document.getElementById("loginPanel").style.display = "none";
+        document.getElementById("driverPanel").style.display = "block";
+
+        document.getElementById("routeInput").value = driverData.route ?? '';
+        const changeBtn = document.querySelector('button[onclick="changeRoute()"]');
+        changeBtn.style.display = driverData.route ? "inline-block" : "none";
+
+        if (driverData.latitude && driverData.longitude) {
+          document.getElementById("startStopBtn").innerText = "Завершить смену";
+
+          if (!navigator.geolocation) return alert("Геолокация не поддерживается");
+          prevPosition = L.latLng(driverData.latitude, driverData.longitude);
+          startTracking();
+        } else {
+          document.getElementById("startStopBtn").innerText = "Начать смену";
         }
+      } else {
+        alert("Неверный PIN");
+      }
+    });
+  }
 
-        // Функция для отображения полного расписания для конкретной остановки
-        function showFullScheduleForStop(busNumber, stopName, event) {
-            if (event) event.stopPropagation();
-            
-            // Изменяем способ поиска контейнера - теперь используем index вместо имени
-            let stopElement = event ? event.currentTarget.closest('.stop') : 
-                              document.querySelector(`.stop[data-stop-name="${stopName}"]`);
-            
-            let scheduleContainer = stopElement.querySelector('.full-schedule-container');
-            
-            if (scheduleContainer.style.display === 'block') {
-                scheduleContainer.style.display = 'none';
-                scheduleContainer.innerHTML = '';
-                return;
-            }
-            
-            // Закрываем все другие открытые расписания
-            document.querySelectorAll('.full-schedule-container').forEach(container => {
-                if (container !== scheduleContainer) {
-                    container.style.display = 'none';
-                    container.innerHTML = '';
-                }
-            });
-            
-            // Остальной код функции остается без изменений
-            let schedule = buses[busNumber][stopName];
-            if (!schedule || schedule.length === 0) {
-                scheduleContainer.innerHTML = '<p>Нет данных о расписании</p>';
-                scheduleContainer.style.display = 'block';
-                return;
-            }
-            
-            let scheduleByHours = {};
-            schedule.forEach(time => {
-                let [hours, minutes] = time.split(':');
-                if (!scheduleByHours[hours]) {
-                    scheduleByHours[hours] = [];
-                }
-                scheduleByHours[hours].push(minutes);
-            });
-            
-            let sortedHours = Object.keys(scheduleByHours).sort();
-            let now = new Date();
-            let currentTime = now.getHours() * 60 + now.getMinutes();
-            
-            // Находим ближайшее время среди всех времен
-            let allTimes = [];
-            for (let hour in scheduleByHours) {
-                scheduleByHours[hour].forEach(min => {
-                    let timeInMinutes = parseInt(hour) * 60 + parseInt(min);
-                    // Если время уже прошло сегодня, добавляем его как время следующего дня
-                    if (timeInMinutes < currentTime) {
-                        allTimes.push(timeInMinutes + 1440); // +24 часа
-                    } else {
-                        allTimes.push(timeInMinutes);
-                    }
-                });
-            }
-            
-            // Сортируем все времена и находим ближайшее
-            allTimes.sort((a, b) => a - b);
-            let nearestTime = allTimes[0];
-            
-            // Если ближайшее время - завтрашнее, приводим его к сегодняшнему формату
-            if (nearestTime >= 1440) {
-                nearestTime -= 1440;
-            }
-            
-            let scheduleHTML = `
-                <div style="margin-bottom: 10px; text-align: center;">
-                    <center><img style="position: relative; top: 3px;" src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="18" height="18">  <strong>Автобус ${busNumber}</strong></center>
-                    <center>${stopName}</center>
-                </div>
-            `;
-            
-            sortedHours.forEach(hour => {
-                let minutesList = scheduleByHours[hour];
-                let hourInt = parseInt(hour);
-                
-                scheduleHTML += `
-                    <div class="hour-block">
-                        <div class="hour-label">${hour}ч</div>
-                        <div class="minutes-list">
-                            ${minutesList.map(min => {
-                                let timeInMinutes = hourInt * 60 + parseInt(min);
-                                let isCurrent = timeInMinutes === nearestTime;
-                                return `<span class="minute-item ${isCurrent ? 'current-minute' : ''}">${min}</span>`;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            });
-            
-            scheduleContainer.innerHTML = scheduleHTML;
-            scheduleContainer.style.display = 'block';
-        }
+  function startTracking() {
+    watchId = navigator.geolocation.watchPosition(pos => {
+      const currPos = L.latLng(pos.coords.latitude, pos.coords.longitude);
+      const route = document.getElementById("routeInput").value;
 
-        function showFullSchedule(busNumber) {
-            searchResults.style.display = 'none';
-            let busWindow = document.getElementById(`bus-window-${busNumber}`);
-            
-            // Закрываем все другие окна
-            document.querySelectorAll('.bus-window').forEach(window => {
-                if (window.id !== `bus-window-${busNumber}`) {
-                    window.style.display = 'none';
-                    window.innerHTML = '';
-                }
-            });
-            
-            let stops = buses[busNumber];
-            let now = new Date();
-            let currentTime = now.getHours() * 60 + now.getMinutes();
-            
-            let scheduleHTML = Object.entries(stops).map(([stop, times]) => {
-                // Группируем время по часам
-                let scheduleByHours = {};
-                times.forEach(time => {
-                    let [hours, minutes] = time.split(':');
-                    if (!scheduleByHours[hours]) {
-                        scheduleByHours[hours] = [];
-                    }
-                    scheduleByHours[hours].push(minutes);
-                });
-                
-                // Сортируем часы
-                let sortedHours = Object.keys(scheduleByHours).sort();
-                
-                // Находим ближайшее время для этой остановки
-                let allTimes = [];
-                for (let hour in scheduleByHours) {
-                    scheduleByHours[hour].forEach(min => {
-                        let timeInMinutes = parseInt(hour) * 60 + parseInt(min);
-                        if (timeInMinutes < currentTime) {
-                            allTimes.push(timeInMinutes + 1440);
-                        } else {
-                            allTimes.push(timeInMinutes);
-                        }
-                    });
-                }
-                
-                allTimes.sort((a, b) => a - b);
-                let nearestTime = allTimes[0];
-                if (nearestTime >= 1440) {
-                    nearestTime -= 1440;
-                }
-                
-                let stopScheduleHTML = sortedHours.map(hour => {
-                    let minutesList = scheduleByHours[hour];
-                    let hourInt = parseInt(hour);
-                    
-                    return `
-                        <div class="hour-block">
-                            <div class="hour-label">${hour}ч</div>
-                            <div class="minutes-list">
-                                ${minutesList.map(min => {
-                                    let timeInMinutes = hourInt * 60 + parseInt(min);
-                                    let isCurrent = timeInMinutes === nearestTime;
-                                    return `<span class="minute-item ${isCurrent ? 'current-minute' : ''}">${min}</span>`;
-                                }).join('')}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                
-                return `
-                    <center><div class="stop-item">
-                        <div class="stop-name">${escapeHtml(stop)}</div>
-                        ${stopScheduleHTML}
-                    </div></center>
-                `;
-            }).join("");
+      const distanceMoved = prevPosition ? currPos.distanceTo(prevPosition) : Infinity;
+      if (distanceMoved < 3) return; // Игнорируем шум < 3 м
 
-            busWindow.innerHTML = `
-                <div class="container">
-                    <h3 class="full-schedule-title" style="text-align: center;"><img style="position: relative; top: 1px;" src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="18" height="18"> Полное расписание автобуса ${escapeHtml(busNumber)}</h3>
-                    ${scheduleHTML}
-                    <button class="action-btn" onclick="closeBusWindow('${busNumber}')">Закрыть</button>
-                </div>
-            `;
-            busWindow.style.display = 'block';
-        }
+      let angle = 0;
+      if (prevPosition) {
+        angle = calculateAngle(prevPosition, currPos);
+      }
+      prevPosition = currPos;
 
-        function getPixel(c) {
-            return 6 + Math.floor(c / 2) * 161 + (c % 2) * 81;
-        }
-        
-        function updateBusMarkerPosition(busNumber) {
-            let busWindow = document.getElementById(`bus-window-${busNumber}`);
-            if (!busWindow) return;
-            
-            // Удаляем старый маркер, если он есть
-            if (busMarkers[busNumber]) {
-                busMarkers[busNumber].remove();
-            }
-            
-            let now = new Date();
-            let currentTime = now.getHours() * 60 + now.getMinutes();
-            let currentPosition = calculateBusPosition(busNumber, currentTime);
-            
-            if (!currentPosition) return;
-            
-            // Создаем новый маркер
-            let marker = document.createElement('img');
-            marker.className = 'bus-marker';
-            marker.src = "https://cdn3.iconfinder.com/data/icons/maps-and-pins-4/512/map_pin_destination_location_adress_bus_stop-1024.png";
-            marker.width = 20;
-            marker.height = 20;
-            marker.style.display = 'none';
-            marker.style.position = 'absolute';
-            marker.style.zIndex = 10;
-            busMarkers[busNumber] = marker;
+      db.ref("drivers/" + currentDriver).update({
+        latitude: currPos.lat,
+        longitude: currPos.lng,
+        timestamp: new Date().toISOString(),
+        route,
+        angle
+      });
 
-            let stopElement = document.getElementById(`stop-${busNumber}-${currentPosition.stopIndex}`);
-            if (!stopElement) return;
+      map.panTo(currPos, { animate: true, duration: 0.5 });
 
-            if (currentPosition.position === 'at-stop') {
-                let circle = stopElement.querySelector('.circle');
-                if (circle) {
-                    circle.appendChild(marker);
+    }, err => {
+      alert("Ошибка геолокации: " + err.message);
+    }, {
+      enableHighAccuracy: true,
+      maximumAge: 1000
+    });
+  }
 
-                    marker.style.display = 'block';
-                    marker.style.top = getPixel(currentPosition.stopIndex) + 'px';
-                }
-            }
+  function toggleTracking() {
+    const btn = document.getElementById("startStopBtn");
 
-            busWindow.querySelector('.route-map').appendChild(marker);
-            busPositions[busNumber] = currentPosition;
-        }
-        
-        function calculateBusPosition(busNumber, currentTime) {
-            let stops = Object.keys(buses[busNumber]);
-            if (stops.length === 0) return null;
+    if (btn.innerText === "Начать смену") {
+      if (!navigator.geolocation) return alert("Геолокация не поддерживается");
+      startTracking();
+      btn.innerText = "Завершить смену";
+      document.getElementById("changeRouteBtn").style.display = "inline-block";
+    } else {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
 
-            // Находим все времена прибытия для всех остановок
-            let allTimes = [];
-            for (let i = 0; i < stops.length; i++) {
-                let stop = stops[i];
-                buses[busNumber][stop].forEach(time => {
-                    let [hours, minutes] = time.split(":").map(Number);
-                    allTimes.push({
-                        stopIndex: i,
-                        stopName: stop,
-                        time: hours * 60 + minutes
-                    });
-                });
-            }
+      db.ref("drivers/" + currentDriver).update({
+        latitude: null,
+        longitude: null,
+        timestamp: null,
+        route: null,
+        angle: null
+      });
 
-            // Сортируем по времени
-            allTimes.sort((a, b) => a.time - b.time);
+      prevPosition = null;
+      document.getElementById("routeInput").value = "";
+      document.querySelector('button[onclick="changeRoute()"]').style.display = "none";
+      btn.innerText = "Начать смену";
+      document.getElementById("changeRouteBtn").style.display = "none";
 
-            // Проверяем, не находится ли автобус на остановке (время посадки)
-            for (let i = 0; i < allTimes.length; i++) {
-                if (currentTime >= allTimes[i].time && currentTime < allTimes[i].time + 1) {
-                    return {
-                        stopIndex: allTimes[i].stopIndex,
-                        position: 'at-stop',
-                        stopName: allTimes[i].stopName,
-                        boarding: true
-                    };
-                }
-            }
+      if (busMarkers[currentDriver]) {
+        map.removeLayer(busMarkers[currentDriver].marker);
+        delete busMarkers[currentDriver];
+      }
+    }
+  }
 
-            // Находим текущий и следующий отрезок маршрута
-            let current = null;
-            let next = null;
-            
-            for (let i = 0; i < allTimes.length; i++) {
-                if (allTimes[i].time < currentTime) {
-                    current = allTimes[i];
-                } else {
-                    next = allTimes[i];
-                    break;
-                }
-            }
+  function changeRoute() {
+    const route = document.getElementById("routeInput").value;
+    db.ref("drivers/" + currentDriver).update({ route });
+  }
 
-            // Если автобус завершил маршрут
-            if (!next) {
-                next = allTimes[0];
-                next.time += 1440; // Добавляем сутки (первый рейс следующего дня)
-            }
+  function updateMarkers() {
+      db.ref("drivers").once("value", snap => {
+          snap.forEach(child => {
+              const key = child.key;
+              const data = child.val();
+  
+              if (data.latitude && data.longitude) {
+                  const newLatLng = L.latLng(data.latitude, data.longitude);
+                  const angle = data.angle ?? 0;
+  
+                  if (busMarkers[key]) {
+                      const markerObj = busMarkers[key];
+                      const marker = markerObj.marker;
+                      const oldLatLng = marker.getLatLng();
+                      const oldAngle = markerObj.angle ?? 0;
+  
+                      // Проверяем, действительно ли позиция изменилась
+                      const positionChanged = oldLatLng.distanceTo(newLatLng) > 3; // > 3 метров
+                      
+                      // Плавное движение только если позиция изменилась
+                      if (positionChanged) {
+                          animateMarker(marker, oldLatLng, newLatLng);
+                      }
+  
+                      // Плавный поворот только если угол изменился значительно и есть движение
+                      const angleDiff = Math.abs((((angle - oldAngle + 540) % 360) - 180));
+                      if (angleDiff > 10 && positionChanged) { // Увеличил порог до 10 градусов
+                          animateRotation(marker, oldAngle, angle);
+                          markerObj.angle = angle;
+                      }
+  
+                      // Обновить текст маршрута
+                      updateRouteText(marker, data.route);
+                  } else {
+                      const marker = L.marker(newLatLng, {
+                          icon: createBusMarker(data.route, angle)
+                      }).addTo(map);
+                      marker.bindPopup("Водитель: " + key + "<br>Маршрут: " + (data.route ?? "—"));
+                      busMarkers[key] = { marker, angle };
+                  }
+              } else if (busMarkers[key]) {
+                  map.removeLayer(busMarkers[key].marker);
+                  delete busMarkers[key];
+              }
+          });
+      });
+  }
 
-            // Если автобус еще не начал маршрут
-            if (!current) {
-                current = allTimes[allTimes.length - 1];
-                current.time -= 1440; // Вычитаем сутки (последний рейс предыдущего дня)
-            }
+  db.ref("drivers").on("value", updateMarkers);
+  updateMarkers();
+</script>
 
-            // Рассчитываем прогресс между остановками
-            let totalTime = next.time - current.time;
-            let timePassed = currentTime - current.time;
-            let progress = timePassed / totalTime;
-
-            // Если автобус между остановками
-            if (progress > 0 && progress < 1) {
-                return {
-                    stopIndex: current.stopIndex,
-                    position: 'between-stops',
-                    progress: progress,
-                    nextStopIndex: next.stopIndex,
-                    currentStopName: current.stopName,
-                    nextStopName: next.stopName
-                };
-            }
-
-            // Если автобус только что покинул остановку
-            return {
-                stopIndex: current.stopIndex,
-                position: 'at-stop',
-                stopName: current.stopName,
-                boarding: false
-            };
-        }
-
-        // Функция для отображения списка всех остановок
-        function renderStopsList() {
-            stopsList.innerHTML = "";
-            
-            // Собираем все уникальные остановки из всех автобусов
-            let allStops = new Set();
-            for (let bus in buses) {
-                for (let stop in buses[bus]) {
-                    allStops.add(stop);
-                }
-            }
-            
-            if (allStops.size === 0) {
-                stopsList.innerHTML = "<p>Нет добавленных остановок</p>";
-                return;
-            }
-            
-            // Сортируем остановки по алфавиту
-            let sortedStops = Array.from(allStops).sort();
-            
-            // Создаем элементы для каждой остановки
-            sortedStops.forEach(stop => {
-                let div = document.createElement("div");
-                div.className = "bus-item";
-                div.innerHTML = `
-                    <div class="search-item" onclick="showStopInfo('${escapeHtml(stop)}')">
-                        <img src="https://oskemenbus.kz/assets/images/map-icons/stop-icons/city_transport_stop.svg" width="50" height="50ы" style="margin-right: 6px;">
-                        ${escapeHtml(stop)}
-                    </div>
-                `;
-                stopsList.appendChild(div);
-            });
-        }
-        
-        // Функция для переключения видимости списка остановок
-        function toggleStopsList() {
-            if (stopsListContainer.classList.contains('hidden')) {
-                stopsListContainer.classList.remove('hidden');
-                renderStopsList();
-            } else {
-                stopsListContainer.classList.add('hidden');
-            }
-        }
-
-        function showStopInfo(stopName, fromStorage = false) {
-            searchResults.style.display = 'none';
-            stopsListContainer.classList.add('hidden'); // Скрываем список остановок при открытии информации
-            
-            // Сохраняем текущую остановку
-            if (!fromStorage) {
-                currentStop = stopName;
-                localStorage.setItem("currentStop", stopName);
-            }
-            
-            // Найдем все автобусы, которые останавливаются на этой остановке
-            let busesAtStop = [];
-            for (let bus in buses) {
-                if (buses[bus][stopName]) {
-                    busesAtStop.push({
-                        number: bus,
-                        times: buses[bus][stopName]
-                    });
-                }
-            }
-            
-            // Сортируем автобусы по номеру (по возрастанию)
-            busesAtStop.sort((a, b) => parseInt(a.number) - parseInt(b.number));
-            
-            // Получим ближайшее время для каждого автобуса
-            let now = new Date();
-            let currentTime = now.getHours() * 60 + now.getMinutes();
-            
-            // Создаем массив для информации о прибытии автобусов
-            let arrivalInfo = busesAtStop.map(bus => {
-                let times = bus.times.map(time => {
-                    let [hours, minutes] = time.split(":").map(Number);
-                    return hours * 60 + minutes;
-                }).sort((a, b) => a - b);
-                
-                // Находим ближайшее время
-                let nextTime = getNextArrivalTime(bus.times, currentTime);
-                let remainingTime = nextTime - currentTime;
-                if (remainingTime < 0) remainingTime += 1440;
-                
-                let isBoarding = false;
-                for (let time of times) {
-                    if (currentTime >= time && currentTime < time + 1) {
-                        isBoarding = true;
-                        remainingTime = 0;
-                        break;
-                    }
-                }
-                
-                return {
-                    busNumber: bus.number,
-                    remainingTime: remainingTime,
-                    isBoarding: isBoarding,
-                    nextTime: nextTime
-                };
-            });
-            
-            // Сортируем по времени прибытия (сначала те, что прибывают, затем по времени)
-            arrivalInfo.sort((a, b) => {
-                // Если один из автобусов находится в статусе "Прибывает", он должен быть первым
-                if (a.isBoarding && !b.isBoarding) return -1;
-                if (!a.isBoarding && b.isBoarding) return 1;
-                
-                // Иначе сортируем по времени до прибытия
-                return a.remainingTime - b.remainingTime;
-            });
-            
-            // Создаем HTML для номеров автобусов (сортировка по номеру)
-            let busNumbersHTML = busesAtStop.map(bus => bus.number).join(', ');
-            
-            // Создаем HTML для времени прибытия автобусов (сортировка по времени)
-            let busTimesHTML = arrivalInfo.map(info => {
-                let remainingTimeFormatted;
-                if (info.isBoarding) {
-                    remainingTimeFormatted = `<span class="arriving-text">Прибывает</span>`;
-                } else if (info.remainingTime === 1) {
-                    remainingTimeFormatted = "&lt;1 мин";
-                } else if (info.remainingTime >= 60) {
-                    let hours = Math.floor(info.remainingTime / 60);
-                    let mins = info.remainingTime % 60;
-                    remainingTimeFormatted = `${hours}ч ${mins}м`;
-                } else {
-                    remainingTimeFormatted = `${info.remainingTime} мин`;
-                }
-            
-                return `
-                  <div class="bus-time-block">
-                    <div class="bus-time-item">
-                      <div class="bus-time-number">
-                        <img src="https://oskemenbus.kz/assets/images/map-icons/vehicle-icons/icon/bus.svg" width="32" height="32">
-                        ${escapeHtml(info.busNumber)}
-                      </div>
-                    </div>
-                    <div class="bus-time-arrival">
-                      <span style="font-size: 0.6em; vertical-align: middle;">&#9679;</span>
-                      ${remainingTimeFormatted}
-                    </div>
-                  </div>
-                `;
-            }).join("");
-            
-            stopInfoWindow.innerHTML = `
-              <div class="stop-info-window">
-                <div class="stop-info-title">${escapeHtml(stopName)}</div>
-                <div class="stop-info-subtitle">Транспорт на остановке</div>
-                <div class="bus-numbers-list">
-                  <img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="15" height="15" style="margin-top: -1px">
-                  ${busNumbersHTML}
-                </div>
-                <div class="bus-time-container">
-                  ${busTimesHTML}
-                </div>
-                <div class="action-buttons" style="margin-top: 15px;">
-                  <button class="action-button" onclick="showMap('${escapeHtml(stopName)}')">Карта</button>
-                  <button class="action-button" onclick="showStopSchedule('${escapeHtml(stopName)}')">Расписание</button>
-                  <button class="action-button" onclick="addToFavorites('${escapeHtml(stopName)}')">Избранное</button>
-                  <button class="action-button" onclick="showRouteFromStop('${escapeHtml(stopName)}')">Маршрут</button>
-                </div>
-                <button class="action-btn" onclick="closeStopWindow()" style="margin-top: 12px; width: 100%; padding: 8px; font-size: 14px;">Закрыть</button>
-              </div>
-            `;
-            stopInfoWindow.style.display = 'block';
-            
-            // Прокручиваем к окну с информацией
-            stopInfoWindow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-        
-        // Вспомогательная функция для получения ближайшего времени прибытия
-        function getNextArrivalTime(times, currentTime) {
-            let timeValues = times.map(time => {
-                let [hours, minutes] = time.split(":").map(Number);
-                return hours * 60 + minutes;
-            }).sort((a, b) => a - b);
-            
-            // Находим ближайшее время, которое еще не прошло
-            for (let time of timeValues) {
-                if (time > currentTime) {
-                    return time;
-                }
-            }
-            
-            // Если все времена прошли, берем первое время следующего дня
-            return timeValues[0] + 1440;
-        }
-        
-        function closeStopWindow() {
-            stopInfoWindow.style.display = 'none';
-            currentStop = null;
-            localStorage.removeItem("currentStop");
-        }
-        
-        function startUpdateInterval() {
-            if (updateInterval) {
-                clearInterval(updateInterval);
-            }
-            
-            // Обновляем каждые 10 секунд для плавности движения
-            updateInterval = setInterval(() => {
-                let now = new Date();
-                let currentTime = now.getHours() * 60 + now.getMinutes();
-                
-                // Обновляем информацию об остановке
-                if (currentStop) {
-                    showStopInfo(currentStop, true);
-                }
-                
-                // Обновляем маркеры всех автобусов
-                for (let busNumber in buses) {
-                    updateBusMarkerPosition(busNumber);
-                    
-                    // Обновляем открытые окна
-                    let busWindow = document.getElementById(`bus-window-${busNumber}`);
-                    if (busWindow && busWindow.style.display === 'block') {
-                        if (busWindow.innerHTML.includes("Схема маршрута")) {
-                            showRouteMap(busNumber);
-                        } else if (busWindow.innerHTML.includes("Расписание")) {
-                            showSchedule(busNumber);
-                        } else if (busWindow.innerHTML.includes("Полное расписание")) {
-                            showFullSchedule(busNumber);
-                        }
-                    }
-                    
-                    // Обновляем открытые расписания остановок
-                    document.querySelectorAll('.full-schedule-container').forEach(container => {
-                        if (container.style.display === 'block') {
-                            let idParts = container.id.split('-');
-                            let busNum = idParts[1];
-                            let stopName = idParts.slice(3).join('-');
-                            showFullScheduleForStop(busNum, stopName, {stopPropagation: () => {}});
-                        }
-                    });
-                }
-            }, 60000); // 1 секунда вместо 60 для более плавного движения
-        }
-        
-        function showSchedule(busNumber) {
-            searchResults.style.display = 'none';
-            let busWindow = document.getElementById(`bus-window-${busNumber}`);
-            
-            // Закрываем все другие окна
-            document.querySelectorAll('.bus-window').forEach(window => {
-                if (window.id !== `bus-window-${busNumber}`) {
-                    window.style.display = 'none';
-                    window.innerHTML = '';
-                }
-            });
-            
-            let nextBus = getNextBusForAllStops(busNumber);
-            
-            // Определяем статус автобуса
-            let statusText = "";
-            let statusClass = "";
-            
-            if (nextBus.status === "🟢Прибывает") {
-                statusText = "Прибывает на остановку";
-                statusClass = "boarding";
-            } else if (nextBus.status === "🟡В пути") {
-                statusText = "В пути";
-                statusClass = "on-the-way";
-            } else {
-                statusText = "Оффлайн";
-                statusClass = "offline";
-            }
-            
-            busWindow.innerHTML = `
-                <div class="container">
-                    <h3><img style="position: relative; top: 1px;" src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="18" height="18"> Расписание автобуса ${escapeHtml(busNumber)}</h3>
-                    <p>Следующая остановка: <span class="next-stop">${escapeHtml(nextBus.stop)}</span></p>
-                    <p>Следующий рейс: ${nextBus.time}</p>
-                    <p>Расчетное время: <span class="highlight">${formatRemainingTime(nextBus.remaining)}</span></p>
-                    <button class="action-btn" onclick="closeBusWindow('${busNumber}')">Закрыть</button>
-                </div>
-            `;
-            busWindow.style.display = 'block';
-        }
-        
-        function formatRemainingTime(minutes) {
-            if (minutes === 1) return "<1 мин";
-            if (minutes === 0) return '<span class="arriving-status">Прибывает</span>';
-            if (minutes >= 60) {
-                let hours = Math.floor(minutes / 60);
-                let mins = minutes % 60;
-                return `${hours} ч ${mins} мин`;
-            } else {
-                return `${minutes} мин`;
-            }
-        }
-        
-        function getNextBusForAllStops(busNumber) {
-            let now = new Date();
-            let currentTime = now.getHours() * 60 + now.getMinutes();
-            let stops = buses[busNumber];
-            let nextBus = { time: "Нет данных", stop: "", status: "🔴 Оффлайн", remaining: 0 };
-
-            let allTimes = [];
-            for (let stop in stops) {
-                let times = stops[stop].map(time => {
-                    let [hours, minutes] = time.split(":").map(Number);
-                    return { time: hours * 60 + minutes, stop: stop };
-                });
-                allTimes.push(...times);
-            }
-
-            allTimes.sort((a, b) => a.time - b.time);
-
-            let nextTime = allTimes.find(t => t.time > currentTime);
-            if (!nextTime) {
-                nextTime = allTimes[0];
-                nextTime.time += 1440; // Первый рейс следующего дня
-                nextBus.status = "🔴 Оффлайн"; // Статус "Оффлайн" для первого рейса следующего дня
-            } else {
-                nextBus.status = "🟡 В пути"; // Статус "В пути" для текущего рейса
-            }
-
-            let remainingTime = nextTime.time - currentTime;
-            if (remainingTime < 0) remainingTime += 1440;
-
-            let formattedTime = formatTimeFromMinutes(nextTime.time % 1440);
-
-            // Проверка, если текущее время находится в пределах минуты от времени прибытия
-            for (let stop in stops) {
-                let times = stops[stop].map(time => {
-                    let [hours, minutes] = time.split(":").map(Number);
-                    return hours * 60 + minutes;
-                });
-                for (let time of times) {
-                    if (currentTime >= time && currentTime < time + 1) {
-                        nextBus.status = "🟢 Прибывает";
-                        remainingTime = 0;
-                        formattedTime = formatTimeFromMinutes(time);
-                        nextBus.stop = stop;
-                        break;
-                    }
-                }
-            }
-
-            nextBus.time = formattedTime;
-            nextBus.stop = nextTime.stop;
-            nextBus.remaining = remainingTime;
-
-            return nextBus;
-        }
-        
-        function formatTimeFromMinutes(minutes) {
-            let hours = Math.floor(minutes / 60);
-            let mins = Math.floor(minutes % 60);
-            return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-        }
-        
-        function closeBusWindow(busNumber) {
-            document.getElementById(`bus-window-${busNumber}`).style.display = 'none';
-            document.getElementById(`bus-window-${busNumber}`).innerHTML = '';
-        }
-        
-        // Функции для кнопок остановки
-        function showMap(stopName) {
-            alert(`Карта остановки "${stopName}" будет показана здесь.`);
-        }
-        
-        function showStopSchedule(stopName) {
-            alert(`Расписание остановки "${stopName}" будет показано здесь.`);
-        }
-        
-        function addToFavorites(stopName) {
-            alert(`Остановка "${stopName}" добавлена в избранное.`);
-        }
-        
-        function showRouteFromStop(stopName) {
-            alert(`Маршруты через остановку "${stopName}" будут показаны здесь.`);
-        }
-        
-        // Смена режима
-        function switchMode() {
-            // Закрываем все открытые окна
-            document.querySelectorAll('.bus-window').forEach(window => {
-                window.style.display = 'none';
-                window.innerHTML = '';
-            });
-            stopInfoWindow.style.display = 'none';
-            mapContainer.style.display = 'none';
-            stopsListContainer.classList.add('hidden');
-            
-            // Возвращаемся на главный экран
-            appContainer.classList.add('hidden');
-            modeSwitchBtn.classList.add('hidden');
-            welcomeScreen.style.display = 'block';
-            adminLogin.style.display = 'none';
-            adminModeBtn.style.display = 'block';
-            userModeBtn.style.display = 'block';
-            errorMsg.style.display = 'none';
-            adminPassword.value = '';
-            
-            // Очищаем состояние приложения (без удаления данных)
-            localStorage.setItem('appState', 'inactive');
-        }
-    </script>
 </body>
 </html>
