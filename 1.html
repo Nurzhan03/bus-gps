@@ -78,10 +78,6 @@
       line-height: 25px;
     }
 
-    #driverPanel {
-      display: none;
-    }
-
     @media (max-width: 600px) {
       h2 {
         font-size: 20px;
@@ -322,9 +318,6 @@
       if (snap.exists()) {
         currentDriver = localStorage.getItem('driverId');
         const driverData = snap.val()[localStorage.getItem('driverId')];
-
-        document.getElementById("loginPanel").style.display = "none";
-        document.getElementById("driverPanel").style.display = "block";
 
         document.getElementById("routeInput").value = driverData.route ?? '';
         const changeBtn = document.querySelector('button[onclick="changeRoute()"]');
