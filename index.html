@@ -898,11 +898,6 @@
                 <div id="stopInfoWindow" class="stop-window"></div>
             </div>
             
-            <div id="adminPanel" class="hidden">
-                <input id="busNumber" type="text" placeholder="Номер автобуса" class="add-stop-container">
-                <button class="action-btn admin-action" id="addBusBtn">➕ Добавить автобус</button>
-            </div>
-            
             <h3><img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="20" height="20" style="margin-right: 6px; position: relative; top: 3px;">Автобусы</h3>
             <div id="busList" class="bus-list"></div>
         </div>
@@ -930,11 +925,9 @@
         const errorMsg = document.getElementById('errorMsg');
         const loginBtn = document.getElementById('loginBtn');
         const userBadge = document.getElementById('userBadge');
-        const adminPanel = document.getElementById('adminPanel');
         const searchInput = document.getElementById('searchInput');
         const searchResults = document.getElementById('searchResults');
         const busNumberInput = document.getElementById('busNumber');
-        const addBusBtn = document.getElementById('addBusBtn');
         const busList = document.getElementById('busList');
         const stopInfoWindow = document.getElementById('stopInfoWindow');
         const modeSwitchBtn = document.getElementById('modeSwitchBtn');
@@ -952,7 +945,6 @@
             
             // Обработчики событий для основного приложения
             searchInput.addEventListener('input', handleSearchInput);
-            addBusBtn.addEventListener('click', addBus);
             modeSwitchBtn.addEventListener('click', switchMode);
             showStopsBtn.addEventListener('click', toggleStopsList);
             
@@ -1153,14 +1145,12 @@
         function startAdminMode() {
             isAdminMode = true;
             userBadge.textContent = 'Водитель';
-            adminPanel.classList.remove('hidden');
             initializeApp();
         }
         
         function startUserMode() {
             isAdminMode = false;
             userBadge.textContent = 'Пользователь';
-            adminPanel.classList.add('hidden');
             initializeApp();
         }
         
