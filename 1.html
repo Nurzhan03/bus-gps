@@ -121,11 +121,6 @@
 
 <h2>Bus Tracker</h2>
 
-<div id="loginPanel">
-  <input type="password" id="pinInput" placeholder="Введите PIN" />
-  <button onclick="login()">Войти</button>
-</div>
-
 <div id="driverPanel">
   <input type="text" id="routeInput" placeholder="Номер маршрута" />
   <button id="startStopBtn" onclick="toggleTracking()">Начать смену</button>
@@ -322,13 +317,12 @@
     requestAnimationFrame(animate);
   }
 
-  function login() {
+  (function login() {
     const pin = document.getElementById("pinInput").value;
-    db.ref("drivers").orderByChild("pin").equalTo(pin).once("value", snap => {
+    db.ref("drivers").once("value", snap => {
       if (snap.exists()) {
-        const driverId = Object.keys(snap.val())[0];
-        currentDriver = driverId;
-        const driverData = snap.val()[driverId];
+        currentDriver = localStorage.getItem('driverId');
+        const driverData = snap.val()[localStorage.getItem('driverId')];
 
         document.getElementById("loginPanel").style.display = "none";
         document.getElementById("driverPanel").style.display = "block";
@@ -346,11 +340,9 @@
         } else {
           document.getElementById("startStopBtn").innerText = "Начать смену";
         }
-      } else {
-        alert("Неверный PIN");
       }
     });
-  }
+  })();
 
   function startTracking() {
     watchId = navigator.geolocation.watchPosition(pos => {
