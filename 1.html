@@ -31,6 +31,10 @@
       margin: 0;
     }
 
+    #drivelPanel {
+      display: none;
+    }
+
     input, button {
       padding: 10px;
       font-size: 16px;
@@ -317,20 +321,25 @@
     db.ref("drivers").once("value", snap => {
       if (snap.exists()) {
         currentDriver = localStorage.getItem('driverId');
-        const driverData = snap.val()[localStorage.getItem('driverId')];
 
-        document.getElementById("routeInput").value = driverData.route ?? '';
-        const changeBtn = document.querySelector('button[onclick="changeRoute()"]');
-        changeBtn.style.display = driverData.route ? "inline-block" : "none";
-
-        if (driverData.latitude && driverData.longitude) {
-          document.getElementById("startStopBtn").innerText = "Завершить смену";
-
-          if (!navigator.geolocation) return alert("Геолокация не поддерживается");
-          prevPosition = L.latLng(driverData.latitude, driverData.longitude);
-          startTracking();
-        } else {
-          document.getElementById("startStopBtn").innerText = "Начать смену";
+        if (currentDriver) {
+          const driverData = snap.val()[currentDriver];
+  
+          document.getElementById("driverPanel").style.display = "block";
+          
+          document.getElementById("routeInput").value = driverData.route ?? '';
+          const changeBtn = document.querySelector('button[onclick="changeRoute()"]');
+          changeBtn.style.display = driverData.route ? "inline-block" : "none";
+  
+          if (driverData.latitude && driverData.longitude) {
+            document.getElementById("startStopBtn").innerText = "Завершить смену";
+  
+            if (!navigator.geolocation) return alert("Геолокация не поддерживается");
+            prevPosition = L.latLng(driverData.latitude, driverData.longitude);
+            startTracking();
+          } else {
+            document.getElementById("startStopBtn").innerText = "Начать смену";
+          }
         }
       }
     });
