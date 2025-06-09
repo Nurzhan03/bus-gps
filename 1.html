@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#3498db">
-  <title>Bus Tracker</title>
+  <title>BusTracker</title>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -83,17 +83,16 @@
       line-height: 25px;
     }
 
-    #showScheduleBtn {
+    button {
       padding: 10px;
       font-size: 16px;
       margin: 5px 0;
       width: 100%;
       box-sizing: border-box;
-      background-color: #2ecc71;
+      background-color: #9b59b6;
       color: white;
       border: none;
       border-radius: 5px;
-      cursor: pointer;
     }
   </style>
 </head>
@@ -488,13 +487,10 @@
     // Кнопка закрытия
     const closeBtn = document.createElement("button");
     closeBtn.textContent = "×";
-    closeBtn.style.position = "absolute";
-    closeBtn.style.top = "10px";
-    closeBtn.style.right = "10px";
     closeBtn.style.border = "none";
     closeBtn.style.background = "none";
     closeBtn.style.fontSize = "20px";
-    closeBtn.style.cursor = "pointer";
+    closeBtn.style.textAlign = "right";
     closeBtn.onclick = () => document.body.removeChild(modal);
   
     // Заголовок
