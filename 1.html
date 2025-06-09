@@ -543,10 +543,47 @@
     nextTripInfo.appendChild(nextDepartureEl);
     nextTripInfo.appendChild(etaEl);
 
+    const updateScheduleData = () => {
+        const now = new Date();
+        const currentHours = now.getHours();
+        const currentMinutes = now.getMinutes();
+        const currentTotalMinutes = currentHours * 60 + currentMinutes;
+
+        let nextStop = null;
+        let nextDeparture = null;
+        let minDiff = Infinity;
+
+        for (const [stop, times] of Object.entries(schedule)) {
+            for (const time of times) {
+                const [hours, minutes] = time.split(':').map(Number);
+                const totalMinutes = hours * 60 + minutes;
+                const diff = totalMinutes - currentTotalMinutes;
+
+                if (diff > 0 && diff < minDiff) {
+                    minDiff = diff;
+                    nextStop = stop;
+                    nextDeparture = time;
+                }
+            }
+        }
+
+        nextStopEl.textContent = `Следующая остановка: ${nextStop || "Нет данных"}`;
+        nextDepartureEl.textContent = `Следующий рейс: ${nextDeparture || "Нет данных"}`;
+        
+        if (minDiff !== Infinity) {
+            const hours = Math.floor(minDiff / 60);
+            const minutes = minDiff % 60;
+            etaEl.textContent = `Расчетное время: ${hours} ч ${minutes} мин`;
+        } else {
+            etaEl.textContent = "Расчетное время: Нет данных";
+        }
+    };
+
     const fullScheduleTitle = document.createElement("h4");
     fullScheduleTitle.textContent = "Полное расписание:";
     fullScheduleTitle.style.marginTop = "20px";
     fullScheduleTitle.style.marginBottom = "10px";
+    fullScheduleTitle.style.textAlign = "center";
 
     const fullSchedule = document.createElement("div");
     fullSchedule.style.maxHeight = "300px";
@@ -587,6 +624,22 @@
     modalContent.appendChild(fullSchedule);
     modal.appendChild(modalContent);
     document.body.appendChild(modal);
+
+    const refreshTimer = setInterval(updateScheduleData, 60000);
+
+    updateScheduleData();
+
+    closeBtn.onclick = () => {
+        clearInterval(refreshTimer);
+        document.body.removeChild(modal);
+    };
+
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            clearInterval(refreshTimer);
+            document.body.removeChild(modal);
+        }
+    };
   }
 
   db.ref("drivers").on("value", updateMarkers);
