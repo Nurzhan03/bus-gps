@@ -327,16 +327,16 @@
     watchId = navigator.geolocation.watchPosition(pos => {
       const currPos = L.latLng(pos.coords.latitude, pos.coords.longitude);
       const route = document.getElementById("routeInput").value;
-
+  
       const distanceMoved = prevPosition ? currPos.distanceTo(prevPosition) : Infinity;
-      if (distanceMoved < 3) return; // Игнорируем шум < 3 м
-
+      if (distanceMoved < 3) return;
+  
       let angle = 0;
       if (prevPosition) {
         angle = calculateAngle(prevPosition, currPos);
       }
       prevPosition = currPos;
-
+  
       db.ref("drivers/" + currentDriver).update({
         latitude: currPos.lat,
         longitude: currPos.lng,
@@ -344,9 +344,9 @@
         route,
         angle
       });
-
+  
       map.panTo(currPos, { animate: true, duration: 0.5 });
-
+  
     }, err => {
       alert("Ошибка геолокации: " + err.message);
     }, {
@@ -356,44 +356,36 @@
   }
 
   function toggleTracking() {
-    const btn = document.getElementById("startStopBtn");
-
-    if (btn.innerText === "Начать смену") {
-      if (!navigator.geolocation) return alert("Геолокация не поддерживается");
-      startTracking();
-      btn.innerText = "Завершить смену";
-      document.getElementById("changeRouteBtn").style.display = "inline-block";
-    } else {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
-      }
-
-      db.ref("drivers/" + currentDriver).update({
-        latitude: null,
-        longitude: null,
-        timestamp: null,
-        route: null,
-        angle: null
-      });
-
-      prevPosition = null;
-      document.getElementById("routeInput").value = "";
-      document.querySelector('button[onclick="changeRoute()"]').style.display = "none";
-      btn.innerText = "Начать смену";
-      document.getElementById("changeRouteBtn").style.display = "none";
-
-      if (busMarkers[currentDriver]) {
-        map.removeLayer(busMarkers[currentDriver].marker);
-        delete busMarkers[currentDriver];
-      }
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+    }
+  
+    db.ref("drivers/" + currentDriver).update({
+      latitude: null,
+      longitude: null,
+      timestamp: null,
+      route: null,
+      angle: null
+    });
+  
+    prevPosition = null;
+    document.getElementById("routeInput").value = "";
+  
+    if (busMarkers[currentDriver]) {
+      map.removeLayer(busMarkers[currentDriver].marker);
+      delete busMarkers[currentDriver];
     }
   }
 
   function changeRoute() {
     const route = document.getElementById("routeInput").value;
+    
     if (route === "") {
       toggleTracking();
+    } else if (!prevPosition) {
+      startTracking();
+      db.ref("drivers/" + currentDriver).update({ route });
     } else {
       db.ref("drivers/" + currentDriver).update({ route });
     }
