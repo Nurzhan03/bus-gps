@@ -102,7 +102,7 @@
 
 <div id="driverPanel">
   <select id="routeInput">
-    <option value="">Выберите маршрут</option>
+    <option value="">Смена завершена</option>
     <option value="8">8</option>
     <option value="9">9</option>
     <option value="34">34</option>
@@ -111,8 +111,6 @@
     <option value="77А">77А</option>
     <option value="351">351</option>
   </select>
-  <button id="startStopBtn" onclick="toggleTracking()">Начать смену</button>
-  <button id="changeRouteBtn" onclick="changeRoute()">Поменять маршрут</button>
   <button id="showScheduleBtn" onclick="showSchedule()">Расписание</button>
 </div>
 
@@ -310,24 +308,15 @@
     db.ref("drivers").once("value", snap => {
       if (snap.exists()) {
         currentDriver = localStorage.getItem('driverId');
-
+  
         if (currentDriver) {
           const driverData = snap.val()[currentDriver];
-  
           document.getElementById("driverPanel").style.display = "block";
-          
           document.getElementById("routeInput").value = driverData.route ?? '';
-          const changeBtn = document.querySelector('button[onclick="changeRoute()"]');
-          changeBtn.style.display = driverData.route ? "inline-block" : "none";
-  
+          
           if (driverData.latitude && driverData.longitude) {
-            document.getElementById("startStopBtn").innerText = "Завершить смену";
-  
-            if (!navigator.geolocation) return alert("Геолокация не поддерживается");
             prevPosition = L.latLng(driverData.latitude, driverData.longitude);
             startTracking();
-          } else {
-            document.getElementById("startStopBtn").innerText = "Начать смену";
           }
         }
       }
@@ -403,8 +392,14 @@
 
   function changeRoute() {
     const route = document.getElementById("routeInput").value;
-    db.ref("drivers/" + currentDriver).update({ route });
+    if (route === "") {
+      toggleTracking();
+    } else {
+      db.ref("drivers/" + currentDriver).update({ route });
+    }
   }
+
+  document.getElementById("routeInput").addEventListener("change", changeRoute);
 
   function updateMarkers() {
       db.ref("drivers").once("value", snap => {
