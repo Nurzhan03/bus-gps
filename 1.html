@@ -156,8 +156,8 @@
   }
   const stopIcon = L.icon({
     iconUrl: "https://oskemenbus.kz/assets/images/map-icons/stop-icons/city_transport_stop.svg",
-    iconSize: [32, 32],       // можно изменить под размер иконки
-    iconAnchor: [16, 16],     // центр иконки будет в точке
+    iconSize: [32, 32],      
+    iconAnchor: [16, 16],   
   });
   const stops = [
     { lat: 50.19912, lng: 81.72813, name: "п.Октябрьский" },
@@ -411,22 +411,18 @@
                       const oldLatLng = marker.getLatLng();
                       const oldAngle = markerObj.angle ?? 0;
   
-                      // Проверяем, действительно ли позиция изменилась
-                      const positionChanged = oldLatLng.distanceTo(newLatLng) > 3; // > 3 метров
+                      const positionChanged = oldLatLng.distanceTo(newLatLng) > 3;
                       
-                      // Плавное движение только если позиция изменилась
                       if (positionChanged) {
                           animateMarker(marker, oldLatLng, newLatLng);
                       }
   
-                      // Плавный поворот только если угол изменился значительно и есть движение
                       const angleDiff = Math.abs((((angle - oldAngle + 540) % 360) - 180));
-                      if (angleDiff > 10 && positionChanged) { // Увеличил порог до 10 градусов
+                      if (angleDiff > 10 && positionChanged) {
                           animateRotation(marker, oldAngle, angle);
                           markerObj.angle = angle;
                       }
   
-                      // Обновить текст маршрута
                       updateRouteText(marker, data.route);
                   } else {
                       const marker = L.marker(newLatLng, {
@@ -450,7 +446,6 @@
       return;
     }
   
-    // Создаем модальное окно
     const modal = document.createElement("div");
     modal.style.position = "fixed";
     modal.style.top = "0";
@@ -463,7 +458,6 @@
     modal.style.alignItems = "center";
     modal.style.zIndex = "1000";
   
-    // Содержимое модального окна
     const modalContent = document.createElement("div");
     modalContent.style.backgroundColor = "white";
     modalContent.style.padding = "20px";
@@ -473,7 +467,6 @@
     modalContent.style.overflow = "auto";
     modalContent.style.position = "relative";
   
-    // Кнопка закрытия
     const closeBtn = document.createElement("button");
     closeBtn.textContent = "×";
     closeBtn.style.border = "none";
@@ -483,54 +476,115 @@
     closeBtn.style.color = "revert";
     closeBtn.onclick = () => document.body.removeChild(modal);
   
-    // Заголовок
     const title = document.createElement("h3");
     title.textContent = `Расписание маршрута ${route}`;
     title.style.marginTop = "0";
     title.style.textAlign = "center";
 
     const now = new Date();
-    const currentHours = now.getHours().toString().padStart(2, '0');
-    const currentMinutes = now.getMinutes().toString().padStart(2, '0');
-    const currentTimeStr = `${currentHours}:${currentMinutes}`;
-  
-    // Получаем данные расписания из localStorage
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+    const currentTotalMinutes = currentHours * 60 + currentMinutes;
+
     const routesData = JSON.parse(localStorage.getItem("buses")) || {};
     const schedule = routesData[route] || {};
-  
+
     if (Object.keys(schedule).length === 0) {
-      modalContent.innerHTML = "<p>Расписание для этого маршрута не найдено</p>";
-      modalContent.appendChild(closeBtn);
-      modal.appendChild(modalContent);
-      document.body.appendChild(modal);
-      return;
+        modalContent.innerHTML = "<p>Расписание для этого маршрута не найдено</p>";
+        modalContent.appendChild(closeBtn);
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        return;
     }
-  
-    // Создаем HTML для расписания
-    let scheduleHTML = "";
+
+    let nextStop = null;
+    let nextDeparture = null;
+    let minDiff = Infinity;
+
     for (const [stop, times] of Object.entries(schedule)) {
-      scheduleHTML += `
-        <div style="margin-bottom: 15px;">
-          <h4 style="margin-bottom: 5px;">${stop}</h4>
-          <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-            ${times.map(time => {
-    const isCurrent = time === currentTimeStr;
-    return `<span style="padding: 5px; 
-                  background: ${isCurrent ? 'limegreen' : '#f0f0f0'}; 
-                  color: ${isCurrent ? 'white' : 'black'};
-                  border-radius: 3px;
-                  font-weight: ${isCurrent ? 'bold' : 'normal'};">
-            ${time}
-          </span>`;
-}).join("")}
-          </div>
-        </div>
-      `;
+        for (const time of times) {
+            const [hours, minutes] = time.split(':').map(Number);
+            const totalMinutes = hours * 60 + minutes;
+            const diff = totalMinutes - currentTotalMinutes;
+
+            if (diff > 0 && diff < minDiff) {
+                minDiff = diff;
+                nextStop = stop;
+                nextDeparture = time;
+            }
+        }
     }
-  
+
+    const nextTripInfo = document.createElement("div");
+    nextTripInfo.style.marginBottom = "20px";
+    nextTripInfo.style.padding = "15px";
+    nextTripInfo.style.backgroundColor = "#f8f9fa";
+    nextTripInfo.style.borderRadius = "8px";
+
+    const nextStopEl = document.createElement("div");
+    nextStopEl.textContent = `Следующая остановка: ${nextStop || "Нет данных"}`;
+    nextStopEl.style.fontWeight = "bold";
+    nextStopEl.style.marginBottom = "8px";
+
+    const nextDepartureEl = document.createElement("div");
+    nextDepartureEl.textContent = `Следующий рейс: ${nextDeparture || "Нет данных"}`;
+    nextDepartureEl.style.marginBottom = "8px";
+
+    const etaEl = document.createElement("div");
+    if (minDiff !== Infinity) {
+        const hours = Math.floor(minDiff / 60);
+        const minutes = minDiff % 60;
+        etaEl.textContent = `Расчетное время: ${hours} ч ${minutes} мин`;
+    } else {
+        etaEl.textContent = "Расчетное время: Нет данных";
+    }
+
+    nextTripInfo.appendChild(nextStopEl);
+    nextTripInfo.appendChild(nextDepartureEl);
+    nextTripInfo.appendChild(etaEl);
+
+    const fullScheduleTitle = document.createElement("h4");
+    fullScheduleTitle.textContent = "Полное расписание:";
+    fullScheduleTitle.style.marginTop = "20px";
+    fullScheduleTitle.style.marginBottom = "10px";
+
+    const fullSchedule = document.createElement("div");
+    fullSchedule.style.maxHeight = "300px";
+    fullSchedule.style.overflowY = "auto";
+
+    for (const [stop, times] of Object.entries(schedule)) {
+        const stopEl = document.createElement("div");
+        stopEl.style.marginBottom = "15px";
+
+        const stopName = document.createElement("div");
+        stopName.textContent = stop;
+        stopName.style.fontWeight = "bold";
+        stopName.style.marginBottom = "5px";
+
+        const timesEl = document.createElement("div");
+        timesEl.style.display = "flex";
+        timesEl.style.flexWrap = "wrap";
+        timesEl.style.gap = "5px";
+
+        times.forEach(time => {
+            const timeEl = document.createElement("span");
+            timeEl.textContent = time;
+            timeEl.style.padding = "5px";
+            timeEl.style.backgroundColor = "#f0f0f0";
+            timeEl.style.borderRadius = "3px";
+            timesEl.appendChild(timeEl);
+        });
+
+        stopEl.appendChild(stopName);
+        stopEl.appendChild(timesEl);
+        fullSchedule.appendChild(stopEl);
+    }
+
     modalContent.appendChild(closeBtn);
     modalContent.appendChild(title);
-    modalContent.insertAdjacentHTML("beforeend", scheduleHTML);
+    modalContent.appendChild(nextTripInfo);
+    modalContent.appendChild(fullScheduleTitle);
+    modalContent.appendChild(fullSchedule);
     modal.appendChild(modalContent);
     document.body.appendChild(modal);
   }
