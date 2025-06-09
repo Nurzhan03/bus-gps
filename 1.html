@@ -36,7 +36,7 @@
       display: none;
     }
 
-    input, button {
+    select, button {
       padding: 10px;
       font-size: 16px;
       margin: 5px 0;
@@ -82,36 +82,6 @@
       height: 25px;
       line-height: 25px;
     }
-
-    @media (max-width: 600px) {
-      h2 {
-        font-size: 20px;
-        margin: 12px 0;
-      }
-
-      input, button {
-        font-size: 15px;
-        padding: 12px;
-      }
-
-      .vehicle-marker__text {
-        font-size: 14px;
-        padding: 0 5px;
-        height: 22px;
-        line-height: 22px;
-      }
-
-      .vehicle-drop {
-        width: 22px;
-        height: 22px;
-        margin-right: 2px;
-      }
-
-      .vehicle-drop img {
-        width: 22px;
-        height: 22px;
-      }
-    }
   </style>
 </head>
 <body>
@@ -119,7 +89,16 @@
 <h2>Bus Tracker</h2>
 
 <div id="driverPanel">
-  <input type="text" id="routeInput" placeholder="Номер маршрута" />
+  <select id="routeInput">
+    <option value="">Выберите маршрут</option>
+    <option value="8">8</option>
+    <option value="9">9</option>
+    <option value="34">34</option>
+    <option value="67а">67а</option>
+    <option value="77">77</option>
+    <option value="77А">77А</option>
+    <option value="351">351</option>
+  </select>
   <button id="startStopBtn" onclick="toggleTracking()">Начать смену</button>
   <button id="changeRouteBtn" onclick="changeRoute()">Поменять маршрут</button>
 </div>
