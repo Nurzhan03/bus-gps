@@ -486,6 +486,11 @@
     title.textContent = `Расписание маршрута ${route}`;
     title.style.marginTop = "0";
     title.style.textAlign = "center";
+
+    const now = new Date();
+    const currentHours = now.getHours().toString().padStart(2, '0');
+    const currentMinutes = now.getMinutes().toString().padStart(2, '0');
+    const currentTimeStr = `${currentHours}:${currentMinutes}`;
   
     // Получаем данные расписания из localStorage
     const routesData = JSON.parse(localStorage.getItem("buses")) || {};
@@ -506,7 +511,16 @@
         <div style="margin-bottom: 15px;">
           <h4 style="margin-bottom: 5px;">${stop}</h4>
           <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-            ${times.map(time => `<span style="padding: 5px; background: #f0f0f0; border-radius: 3px;">${time}</span>`).join("")}
+            ${times.map(time => {
+    const isCurrent = time === currentTimeStr;
+    return `<span style="padding: 5px; 
+                  background: ${isCurrent ? 'limegreen' : '#f0f0f0'}; 
+                  color: ${isCurrent ? 'white' : 'black'};
+                  border-radius: 3px;
+                  font-weight: ${isCurrent ? 'bold' : 'normal'};">
+            ${time}
+          </span>`;
+}).join("")}
           </div>
         </div>
       `;
