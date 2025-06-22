@@ -1682,7 +1682,7 @@
 
             busWindow.innerHTML = `
                 <div class="container">
-                    <h4><img src="https://cdn3.iconfinder.com/data/icons/maps-and-pins-4/512/map_pin_destination_location_adress_bus_stop-1024.png" width="18" height="18"> Схема маршрута автобуса ${escapeHtml(busNumber)}</h4>
+                    <h4><img src="marker.jpg" width="18" height="18"> Схема маршрута автобуса ${escapeHtml(busNumber)}</h4>
                     <div class="route-map">
                         ${routeMapHTML}
                     </div>
@@ -1917,7 +1917,7 @@
             // Создаем новый маркер
             let marker = document.createElement('img');
             marker.className = 'bus-marker';
-            marker.src = "https://cdn3.iconfinder.com/data/icons/maps-and-pins-4/512/map_pin_destination_location_adress_bus_stop-1024.png";
+            marker.src = "marker.jpg";
             marker.width = 20;
             marker.height = 20;
             marker.style.display = 'none';
