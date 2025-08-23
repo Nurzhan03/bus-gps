@@ -1262,7 +1262,7 @@
                 busMatches.forEach(bus => {
                     const item = document.createElement('div');
                     item.className = 'search-item';
-                    item.innerHTML = `<img src="https://oskemenbus.kz/assets/images/ui-elements/vehicle-icons/single_bus.svg" width="16" height="16" style="margin-right: 6px;"> ${bus}`;
+                    item.innerHTML = `<img src=city_transport_stop.png" width="16" height="16" style="margin-right: 6px;"> ${bus}`;
                     item.onclick = () => {
                         showRouteMap(bus);
                         document.getElementById(`bus-window-${bus}`).scr
@@ -2434,3 +2434,4 @@
     </script>
 </body>
 </html>
+
