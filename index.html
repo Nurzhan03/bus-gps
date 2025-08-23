@@ -1277,7 +1277,7 @@
                 stopMatches.forEach(stop => {
                     const item = document.createElement('div');
                     item.className = 'search-item';
-                    item.innerHTML = `<img src="https://oskemenbus.kz/assets/images/map-icons/stop-icons/city_transport_stop.svg" width="40" height="40" style="margin-right: 6px;">${escapeHtml(stop)}`;
+                    item.innerHTML = `<img src="city_transport_stop.png" width="40" height="40" style="margin-right: 6px;">${escapeHtml(stop)}`;
                     item.onclick = () => {
                         showStopInfo(stop);
                         searchResults.style.display = 'none';
@@ -2434,4 +2434,5 @@
     </script>
 </body>
 </html>
+
 
