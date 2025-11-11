@@ -1397,7 +1397,7 @@
             // После рендера подставляем реальное количество
             const count = await countWithRoute(String(bus));
             const countEl = document.getElementById(`count-${bus}`);
-            if (countEl) countEl.textContent = ` Количество единиц на маршруте: ${count}`;
+            if (countEl) countEl.textContent = ` Количество единиц: ${count}`;
           });
         }
 
@@ -2475,6 +2475,7 @@
     </script>
 </body>
 </html>
+
 
 
 
