@@ -1346,52 +1346,59 @@
         }
         
         function renderBusList() {
-            busList.innerHTML = "";
-
-            if (Object.keys(buses).length === 0) {
-                busList.innerHTML = "<p>Нет добавленных автобусов</p>";
-                return;
-            }
-
-            // Сортируем автобусы по номеру
-            let sortedBusNumbers = Object.keys(buses).sort((a, b) => parseInt(a) - parseInt(b));
-
-          function countWithRoute(targetRoute) {
-            const refDrivers = db.ref("drivers");
+          busList.innerHTML = "";
         
-            refDrivers.once("value").then(snapshot => {
-              let count = 0;
-              snapshot.forEach(childSnap => {
-                const data = childSnap.val();
-                if (data.route === targetRoute) count++;
-              });
-              return count
-            });
+          if (Object.keys(buses).length === 0) {
+            busList.innerHTML = "<p>Нет добавленных автобусов</p>";
+            return;
           }
-
-            for (let bus of sortedBusNumbers) {
-                let div = document.createElement("div");
-                div.className = "bus-list-item";
-                div.innerHTML = `
-                    <div class="bus-item">
-                        <div class="bus-header">
-                            <div class="bus-number-container">
-                                <div class="bus-number">
-                                    <img src="bus green.png" alt="Bus">
-                                    ${escapeHtml(bus)} | ${countWithRoute(String(bus))}
-                                </div>
-                            </div>
-                            <div class="bus-actions">
-                                <button class="action-btn" onclick="showRouteMap('${bus}')">Маршрут</button>
-                                <button class="action-btn" onclick="showSchedule('${bus}')">Расписание</button>
-                                <button class="action-btn" onclick="showFullSchedule('${bus}')">Полное расписание</button>
-                            </div>
-                        </div>
+        
+          // Сортируем автобусы по номеру
+          const sortedBusNumbers = Object.keys(buses).sort((a, b) => parseInt(a) - parseInt(b));
+        
+          // Асинхронная функция для подсчёта
+          async function countWithRoute(targetRoute) {
+            const snapshot = await db.ref("drivers").once("value");
+            let count = 0;
+            snapshot.forEach(childSnap => {
+              const data = childSnap.val();
+              if (data.route === targetRoute) count++;
+            });
+            return count;
+          }
+        
+          // Для каждого автобуса
+          sortedBusNumbers.forEach(async (bus) => {
+            const div = document.createElement("div");
+            div.className = "bus-list-item";
+        
+            // Вставляем HTML сразу, но с "заглушкой"
+            div.innerHTML = `
+              <div class="bus-item">
+                <div class="bus-header">
+                  <div class="bus-number-container">
+                    <div class="bus-number">
+                      <img src="bus green.png" alt="Bus">
+                      ${escapeHtml(bus)} | <span id="count-${bus}">...</span>
                     </div>
-                    <div class="bus-window" id="bus-window-${bus}"></div>
-                `;
-                busList.appendChild(div);
-            }
+                  </div>
+                  <div class="bus-actions">
+                    <button class="action-btn" onclick="showRouteMap('${bus}')">Маршрут</button>
+                    <button class="action-btn" onclick="showSchedule('${bus}')">Расписание</button>
+                    <button class="action-btn" onclick="showFullSchedule('${bus}')">Полное расписание</button>
+                  </div>
+                </div>
+              </div>
+              <div class="bus-window" id="bus-window-${bus}"></div>
+            `;
+        
+            busList.appendChild(div);
+        
+            // После рендера подставляем реальное количество
+            const count = await countWithRoute(String(bus));
+            const countEl = document.getElementById(`count-${bus}`);
+            if (countEl) countEl.textContent = count;
+          });
         }
 
         // Функция для показа автобуса на карте
@@ -2468,6 +2475,7 @@
     </script>
 </body>
 </html>
+
 
 
 
