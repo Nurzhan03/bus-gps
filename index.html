@@ -1379,7 +1379,7 @@
                   <div class="bus-number-container">
                     <div class="bus-number">
                       <img src="bus green.png" alt="Bus">
-                      ${escapeHtml(bus)} | <span id="count-${bus}">...</span>
+                      ${escapeHtml(bus)} <span id="count-${bus}">...</span>
                     </div>
                   </div>
                   <div class="bus-actions">
@@ -1397,7 +1397,10 @@
             // После рендера подставляем реальное количество
             const count = await countWithRoute(String(bus));
             const countEl = document.getElementById(`count-${bus}`);
-            if (countEl) countEl.textContent = ` Количество единиц: ${count}`;
+            if (countEl) {
+                countEl.innerHTML = `\tКоличество единиц: ${count}`;
+                countEl.style.color = '#808080';
+            }
           });
         }
 
@@ -2475,6 +2478,7 @@
     </script>
 </body>
 </html>
+
 
 
 
