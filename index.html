@@ -1335,6 +1335,19 @@
             // Сортируем автобусы по номеру
             let sortedBusNumbers = Object.keys(buses).sort((a, b) => parseInt(a) - parseInt(b));
 
+          function countWithRoute(targetRoute) {
+            const refDrivers = db.ref("drivers");
+        
+            refDrivers.once("value").then(snapshot => {
+              let count = 0;
+              snapshot.forEach(childSnap => {
+                const data = childSnap.val();
+                if (data.route === targetRoute) count++;
+              });
+              return count
+            });
+          }
+
             for (let bus of sortedBusNumbers) {
                 let div = document.createElement("div");
                 div.className = "bus-list-item";
@@ -1344,7 +1357,7 @@
                             <div class="bus-number-container">
                                 <div class="bus-number">
                                     <img src="bus green.png" alt="Bus">
-                                    ${escapeHtml(bus)}
+                                    ${escapeHtml(bus)} | ${countWithRoute(bus)}
                                 </div>
                             </div>
                             <div class="bus-actions">
@@ -2434,6 +2447,7 @@
     </script>
 </body>
 </html>
+
 
 
 
