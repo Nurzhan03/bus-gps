@@ -1395,11 +1395,12 @@
             busList.appendChild(div);
         
             // После рендера подставляем реальное количество
-            const count = await countWithRoute(String(bus));
+            const count = await countWithRoute(bus);
             const countEl = document.getElementById(`count-${bus}`);
             if (countEl) {
                 countEl.innerHTML = `Количество единиц: ${count}`;
                 countEl.style.color = '#808080';
+                countEl.style.marginLeft = '5px';
             }
           });
         }
@@ -2478,6 +2479,7 @@
     </script>
 </body>
 </html>
+
 
 
 
