@@ -907,6 +907,20 @@
     <button class="mode-switch-btn hidden" id="modeSwitchBtn">Сменить режим</button>
 
     <script>
+         const firebaseConfig = {
+            apiKey: "AIzaSyCP0LADq1FNR8rewGIf_nJg6QNbQhdT1_E",
+            authDomain: "bus-tracker-21cf8.firebaseapp.com",
+            databaseURL: "https://bus-tracker-21cf8-default-rtdb.firebaseio.com",
+            projectId: "bus-tracker-21cf8",
+            storageBucket: "bus-tracker-21cf8.firebasestorage.app",
+            messagingSenderId: "384616258935",
+            appId: "1:384616258935:web:42f130f72d84b3ef97d572",
+            measurementId: "G-Y8H5M7DEJC"
+          };
+    
+          firebase.initializeApp(firebaseConfig);
+          const db = firebase.database();
+        
         // Глобальные переменные
         let buses = JSON.parse(localStorage.getItem("buses")) || {};
         let currentStop = localStorage.getItem("currentStop") || null;
@@ -2447,6 +2461,7 @@
     </script>
 </body>
 </html>
+
 
 
 
